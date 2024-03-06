@@ -14,7 +14,40 @@ defmodule Posthog.Client do
     post("/capture", %{batch: body})
   end
 
-    post!("/capture", body)
+  def retrieve_feature_flags(project_id, opts \\ []) do
+    get("/api/projects/#{project_id}/feature_flags", Keyword.take(opts, ~w[limit offset]a))
+  end
+
+  def retrieve_feature_flag_activity(project_id) do
+    get("/api/projects/#{project_id}/feature_flags/activity")
+  end
+
+  def retrieve_feature_flag_evaluation_reasons(project_id) do
+    get("/api/projects/#{project_id}/feature_flags/evaluation_reasons")
+  end
+
+  def retrieve_my_flags(project_id) do
+    get("/api/projects/#{project_id}/feature_flags/my_flags")
+  end
+
+  def retrieve_feature_flags_for_local_evaluation(project_id) do
+    get("/api/projects/#{project_id}/feature_flags/local_evaluation")
+  end
+
+  def retrieve_feature_flag(project_id, id) do
+    get("/api/projects/#{project_id}/feature_flags/#{id}")
+  end
+
+  def retrieve_feature_flag_activity(project_id, id) do
+    get("/api/projects/#{project_id}/feature_flags/#{id}/activity")
+  end
+
+  def retrieve_feature_flag_role_access(project_id, id, opts \\ []) do
+    get("/api/projects/#{project_id}/feature_flags/#{id}/role_access", Keyword.take(opts, ~w[limit offset]a))
+  end
+
+  def retrieve_role_access(project_id, flag_id, id) do
+    get("/api/projects/#{project_id}/feature_flags/#{flag_id}/role_access/#{id}")
   end
 
   defp build_event(event, properties, timestamp) do
@@ -25,8 +58,8 @@ defmodule Posthog.Client do
     request(url: path, json: body, method: :post)
   end
 
-  defp get(path) do
-    request(url: path, method: :get)
+  defp get(path, query_params \\ []) do
+    request(url: path, params: query_params, method: :get)
   end
 
   defp request(opts) do
