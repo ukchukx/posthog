@@ -58,11 +58,17 @@ defmodule Posthog.Client do
     delete("/api/projects/#{project_id}/feature_flags/#{flag_id}/role_access/#{id}")
   end
 
+  def update_feature_flag(project_id, id, %{} = body) do
+    patch("/api/projects/#{project_id}/feature_flags/#{id}", body)
+  end
+
   defp build_event(event, properties, timestamp) do
     %{event: to_string(event), properties: Map.new(properties), timestamp: timestamp}
   end
 
-  defp post(path, %{} = body), do: request(url: path, json: body, method: :post)
+  defp post(path, body), do: request(url: path, json: body, method: :post)
+
+  defp patch(path, body), do: request(url: path, json: body, method: :patch)
 
   defp get(path, query_params \\ []), do: request(url: path, params: query_params, method: :get)
 
