@@ -62,6 +62,30 @@ defmodule Posthog.Client do
     patch("/api/projects/#{project_id}/feature_flags/#{id}", body)
   end
 
+  def create_feature_flag_user_blast_radius(project_id, %{} = body) do
+    post("/api/projects/#{project_id}/feature_flags/user_blast_radius", body)
+  end
+
+  def create_feature_flag_static_cohort(project_id, id, %{} = body) do
+    post("/api/projects/#{project_id}/feature_flags/#{id}/create_static_cohort_for_flag", body)
+  end
+
+  def create_feature_flag_dashboard(project_id, id, %{} = body) do
+    post("/api/projects/#{project_id}/feature_flags/#{id}/dashboard", body)
+  end
+
+  def enrich_feature_flag_usage_dashboard(project_id, id, %{} = body) do
+    post("/api/projects/#{project_id}/feature_flags/#{id}/enrich_usage_dashboard", body)
+  end
+
+  def create_feature_flag_role_access(project_id, flag_id, role_id) do
+    post("/api/projects/#{project_id}/feature_flags/#{flag_id}/role_access", %{"role_id" => role_id})
+  end
+
+  def create_feature_flag(project_id, %{} = body) do
+    post("/api/projects/#{project_id}/feature_flags", body)
+  end
+
   defp build_event(event, properties, timestamp) do
     %{event: to_string(event), properties: Map.new(properties), timestamp: timestamp}
   end
