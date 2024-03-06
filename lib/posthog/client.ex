@@ -2,9 +2,7 @@ defmodule Posthog.Client do
   @moduledoc false
 
   def capture(event, params, timestamp) when is_bitstring(event) or is_atom(event) do
-    body = build_event(event, params, timestamp)
-
-    post!("/capture", body)
+    post("/capture", build_event(event, params, timestamp))
   end
 
   def batch(events) when is_list(events) do
@@ -13,7 +11,8 @@ defmodule Posthog.Client do
         build_event(event, params, timestamp)
       end
 
-    body = %{batch: body}
+    post("/capture", %{batch: body})
+  end
 
     post!("/capture", body)
   end
@@ -22,40 +21,22 @@ defmodule Posthog.Client do
     %{event: to_string(event), properties: Map.new(properties), timestamp: timestamp}
   end
 
-  defp post!(path, %{} = body) do
-    body =
-      body
-      |> Map.put(:api_key, api_key())
-      |> json_library().encode!()
-
-    api_url()
-    |> URI.merge(path)
-    |> URI.to_string()
-    |> :hackney.post([{"Content-Type", "application/json"}], body)
-    |> handle()
+  defp post(path, %{} = body) do
+    request(url: path, json: body, method: :post)
   end
 
-  @spec handle(tuple()) :: {:ok, term()} | {:error, term()}
-  defp handle({:ok, status, _headers, _ref} = resp) when div(status, 100) == 2 do
-    {:ok, to_response(resp)}
+  defp get(path) do
+    request(url: path, method: :get)
   end
 
-  defp handle({:ok, _status, _headers, _ref} = resp) do
-    {:error, to_response(resp)}
-  end
-
-  defp handle({:error, _} = result) do
-    result
-  end
-
-  defp to_response({_, status, headers, ref}) do
-    response = %{status: status, headers: headers, body: nil}
-
-    with {:ok, body} <- :hackney.body(ref),
-         {:ok, json} <- json_library().decode(body) do
-      %{response | body: json}
-    else
-      _ -> response
+  defp request(opts) do
+    [base_url: api_url(), auth: {:bearer, api_key()}]
+    |> Keyword.merge(opts)
+    |> Req.new()
+    |> Req.request()
+    |> case do
+      {:ok, %{body: body}} -> {:ok, body}
+      err -> err
     end
   end
 
@@ -70,7 +51,7 @@ defmodule Posthog.Client do
         URL and key in your config:
 
             config :posthog,
-              api_url: "https://posthog.example.com",
+              api_url: "https://app.posthog.com",
               api_key: "my-key"
         """
     end
@@ -87,13 +68,9 @@ defmodule Posthog.Client do
         URL and key in your config:
 
             config :posthog,
-              api_url: "https://posthog.example.com",
+              api_url: "https://app.posthog.com",
               api_key: "my-key"
         """
     end
-  end
-
-  defp json_library() do
-    Application.get_env(:posthog, :json_library, Jason)
   end
 end

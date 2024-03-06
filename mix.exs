@@ -5,7 +5,7 @@ defmodule Posthog.MixProject do
     [
       app: :posthog,
       version: "0.1.0",
-      elixir: "~> 1.8",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
@@ -35,9 +35,9 @@ defmodule Posthog.MixProject do
 
   defp deps do
     [
-      {:hackney, "~> 1.10"},
-      {:jason, "~> 1.2", optional: true},
-      {:ex_doc, ">= 0.0.0", only: [:doc]}
+      {:ex_doc, ">= 0.0.0"},
+      {:jason, "~> 1.4"},
+      {:req, "~> 0.4.0"}
     ]
   end
 end
