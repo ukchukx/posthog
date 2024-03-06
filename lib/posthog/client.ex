@@ -50,17 +50,23 @@ defmodule Posthog.Client do
     get("/api/projects/#{project_id}/feature_flags/#{flag_id}/role_access/#{id}")
   end
 
+  def delete_feature_flag(project_id, id) do
+    delete("/api/projects/#{project_id}/feature_flags/#{id}")
+  end
+
+  def delete_feature_flag_role_access(project_id, flag_id, id) do
+    delete("/api/projects/#{project_id}/feature_flags/#{flag_id}/role_access/#{id}")
+  end
+
   defp build_event(event, properties, timestamp) do
     %{event: to_string(event), properties: Map.new(properties), timestamp: timestamp}
   end
 
-  defp post(path, %{} = body) do
-    request(url: path, json: body, method: :post)
-  end
+  defp post(path, %{} = body), do: request(url: path, json: body, method: :post)
 
-  defp get(path, query_params \\ []) do
-    request(url: path, params: query_params, method: :get)
-  end
+  defp get(path, query_params \\ []), do: request(url: path, params: query_params, method: :get)
+
+  defp delete(path), do: request(url: path, method: :delete)
 
   defp request(opts) do
     [base_url: api_url(), auth: {:bearer, api_key()}]
@@ -68,6 +74,7 @@ defmodule Posthog.Client do
     |> Req.new()
     |> Req.request()
     |> case do
+      {:ok, %{status: 405}} -> :ok
       {:ok, %{body: body}} -> {:ok, body}
       err -> err
     end
