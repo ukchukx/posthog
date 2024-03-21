@@ -14,7 +14,12 @@ defmodule Posthog.MixProject do
   end
 
   def application do
-    []
+    [
+      env: [
+        api_url: "https://eu.posthog.com",
+        api_key: "phx_iFLtZhbIGLkMpU0BqLCEuix8pHrCwv1IUOQZxZwdhFj"
+      ]
+    ]
   end
 
   defp description do
