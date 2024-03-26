@@ -12,23 +12,43 @@ defmodule Posthog do
   is Jason.
   """
 
-  @doc """
-  Sends a capture event. `distinct_id` is the only required parameter.
+  use Posthog.Client
 
-  ## Examples
+  def version, do: Application.get_env(:posthog, :version, "1.4.9")
 
-      iex> Posthog.capture("login", distinct_id: user.id)
-      :ok
-      iex> Posthog.capture("login", [distinct_id: user.id], DateTime.utc_now())
-      :ok
+  def lib, do: "posthog-elixir"
 
-  """
-  @typep result() :: {:ok, term()} | {:error, term()}
-  @typep timestamp() :: DateTime.t() | NaiveDateTime.t() | String.t() | nil
+  def api_url do
+    case Application.get_env(:posthog, :api_url) do
+      url when is_bitstring(url) ->
+        url
 
-  @spec capture(atom() | String.t(), keyword() | map(), timestamp()) :: result()
-  defdelegate capture(event, params, timestamp \\ nil), to: Posthog.Client
+      term ->
+        raise """
+        Expected a string API URL, got: #{inspect(term)}. Set a
+        URL and key in your config:
 
-  @spec batch(list(tuple())) :: result()
-  defdelegate batch(events), to: Posthog.Client
+            config :posthog,
+              api_url: "https://app.posthog.com",
+              api_key: "my-key"
+        """
+    end
+  end
+
+  def api_key do
+    case Application.get_env(:posthog, :api_key) do
+      key when is_bitstring(key) ->
+        key
+
+      term ->
+        raise """
+        Expected a string API key, got: #{inspect(term)}. Set a
+        URL and key in your config:
+
+            config :posthog,
+              api_url: "https://app.posthog.com",
+              api_key: "my-key"
+        """
+    end
+  end
 end

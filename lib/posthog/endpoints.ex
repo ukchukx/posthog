@@ -73,5 +73,4 @@ defmodule Posthog.Endpoints do
   def create_feature_flag(project_id, %{} = body) do
     post("/api/projects/#{project_id}/feature_flags", body)
   end
-
 end

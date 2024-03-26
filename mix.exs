@@ -42,7 +42,8 @@ defmodule Posthog.MixProject do
     [
       {:ex_doc, ">= 0.0.0"},
       {:jason, "~> 1.4"},
-      {:req, "~> 0.4.0"}
+      {:req, "~> 0.4.0"},
+      {:uuid, "~> 1.1"}
     ]
   end
 end

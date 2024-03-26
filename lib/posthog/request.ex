@@ -10,7 +10,17 @@ defmodule Posthog.Request do
   def delete(path), do: request(url: path, method: :delete)
 
   defp request(opts) do
-    [base_url: api_url(), auth: {:bearer, api_key()}]
+    default_headers = [{"user-agent", Posthog.lib() <> "/" <> Posthog.version()}]
+
+    opts =
+      opts
+      |> Keyword.get(:headers, [])
+      |> Keyword.merge(default_headers)
+      |> then(&Keyword.put(opts, :headers, &1))
+      |> add_sent_at(opts[:method])
+      |> add_api_key(opts[:method])
+
+    [base_url: Posthog.api_url(), auth: {:bearer, Posthog.api_key()}]
     |> Keyword.merge(opts)
     |> Req.new()
     |> Req.request()
@@ -21,37 +31,26 @@ defmodule Posthog.Request do
     end
   end
 
-  defp api_url do
-    case Application.get_env(:posthog, :api_url) do
-      url when is_bitstring(url) ->
-        url
+  defp add_sent_at(opts, :post) do
+    case opts[:json] do
+      nil ->
+        opts
 
-      term ->
-        raise """
-        Expected a string API URL, got: #{inspect(term)}. Set a
-        URL and key in your config:
-
-            config :posthog,
-              api_url: "https://app.posthog.com",
-              api_key: "my-key"
-        """
+      body ->
+        now = NaiveDateTime.utc_now()
+        body = Map.put(body, :sentAt, NaiveDateTime.to_iso8601(now))
+        Keyword.put(opts, :body, body)
     end
   end
 
-  defp api_key do
-    case Application.get_env(:posthog, :api_key) do
-      key when is_bitstring(key) ->
-        key
+  defp add_sent_at(opts, _), do: opts
 
-      term ->
-        raise """
-        Expected a string API key, got: #{inspect(term)}. Set a
-        URL and key in your config:
-
-            config :posthog,
-              api_url: "https://app.posthog.com",
-              api_key: "my-key"
-        """
+  defp add_api_key(opts, :post) do
+    case opts[:json] do
+      nil -> opts
+      body -> Keyword.put(opts, :body, Map.put(body, :api_key, Posthog.api_key()))
     end
   end
+
+  defp add_api_key(opts, _), do: opts
 end
