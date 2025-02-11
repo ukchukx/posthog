@@ -1,4 +1,4 @@
-name: Autobump
+name: CD
 
 on:
   pull_request:
@@ -98,3 +98,13 @@ jobs:
           branch: ${{ github.event.pull_request.base.ref }}
           message: "chore: Bump version to ${{ steps.versions.outputs.new-version }}"
           github_token: ${{ secrets.POSTHOG_BOT_GITHUB_TOKEN }}
+
+      - name: Publish to Hex.pm
+        if: steps.bump-type.outputs.bump-type != 'null'
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          mix hex.publish --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
