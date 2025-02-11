@@ -1,3 +1,7 @@
+## 0.4.0 - 2025-02-11
+
+
+
 ## 0.3.0 - 2025-01-09
 
 - Initial feature flags implementation (#7)
