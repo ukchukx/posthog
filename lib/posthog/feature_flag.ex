@@ -4,6 +4,11 @@ defmodule Posthog.FeatureFlag do
   defstruct [:name, :value, :enabled]
 
   @type variant :: binary() | boolean()
+  @type properties :: %{optional(binary()) => term()}
+  @type flag_response :: %{
+          feature_flags: %{optional(binary()) => variant()},
+          feature_flag_payloads: %{optional(binary()) => term()}
+        }
 
   @type t :: %__MODULE__{
           name: binary(),

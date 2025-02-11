@@ -2,10 +2,26 @@ defmodule Posthog.Client do
   @moduledoc false
   @app :posthog
 
+  @type headers :: [{binary(), binary()}]
+  @type response :: %{status: pos_integer(), headers: headers(), body: map() | nil}
+  @type event :: atom() | binary()
+  @type properties :: %{optional(String.t()) => term()}
+  @type timestamp :: String.t()
+  @type opts :: [
+          headers: headers(),
+          groups: map(),
+          group_properties: map(),
+          person_properties: map(),
+          timestamp: timestamp()
+        ]
+
+  @spec headers(headers()) :: headers()
   defp headers(additional_headers \\ []) do
     Enum.concat(additional_headers || [], [{"content-type", "application/json"}])
   end
 
+  @spec capture(event(), properties(), opts() | timestamp()) ::
+          {:ok, response()} | {:error, response() | term()}
   def capture(event, params, opts) when is_list(opts) do
     post!("/capture", build_event(event, params, opts[:timestamp]), headers(opts[:headers]))
   end
@@ -14,6 +30,8 @@ defmodule Posthog.Client do
     post!("/capture", build_event(event, params, timestamp), headers())
   end
 
+  @spec batch([{event(), properties(), timestamp()}], opts() | any(), headers()) ::
+          {:ok, response()} | {:error, response() | term()}
   def batch(events, opts) when is_list(opts) do
     batch(events, opts, headers(opts[:headers]))
   end
@@ -24,6 +42,8 @@ defmodule Posthog.Client do
     post!("/capture", %{batch: body}, headers)
   end
 
+  @spec feature_flags(binary(), opts()) ::
+          {:ok, Posthog.FeatureFlag.flag_response()} | {:error, response() | term()}
   def feature_flags(distinct_id, opts) do
     body =
       opts
@@ -32,13 +52,12 @@ defmodule Posthog.Client do
 
     case post!("/decide", body, headers(opts[:headers])) do
       {:ok, %{body: body}} ->
-        flag_fields =
-          body
-          |> Map.take(~w[featureFlags featureFlagPayloads])
-          |> Map.update!(
-            "featureFlagPayloads",
-            &Enum.reduce(&1, %{}, fn {k, v}, map -> Map.put(map, k, Jason.decode!(v)) end)
-          )
+        flag_fields = %{
+          feature_flags: body["featureFlags"],
+          feature_flag_payloads:
+            body["featureFlagPayloads"]
+            |> Enum.reduce(%{}, fn {k, v}, map -> Map.put(map, k, Jason.decode!(v)) end)
+        }
 
         {:ok, flag_fields}
 
@@ -47,10 +66,12 @@ defmodule Posthog.Client do
     end
   end
 
+  @spec build_event(event(), properties(), timestamp()) :: map()
   defp build_event(event, properties, timestamp) do
     %{event: to_string(event), properties: Map.new(properties), timestamp: timestamp}
   end
 
+  @spec post!(binary(), map(), headers()) :: {:ok, response()} | {:error, response() | term()}
   defp post!(path, %{} = body, headers) do
     body =
       body
@@ -63,7 +84,7 @@ defmodule Posthog.Client do
     |> handle()
   end
 
-  @spec handle(tuple()) :: {:ok, term()} | {:error, term()}
+  @spec handle(tuple()) :: {:ok, response()} | {:error, response() | term()}
   defp handle({:ok, status, _headers, _ref} = resp) when div(status, 100) == 2 do
     {:ok, to_response(resp)}
   end
@@ -76,6 +97,7 @@ defmodule Posthog.Client do
     result
   end
 
+  @spec to_response({:ok, pos_integer(), headers(), reference()}) :: response()
   defp to_response({_, status, headers, ref}) do
     response = %{status: status, headers: headers, body: nil}
 
@@ -87,6 +109,7 @@ defmodule Posthog.Client do
     end
   end
 
+  @spec api_url() :: binary()
   defp api_url do
     case Application.get_env(@app, :api_url) do
       url when is_bitstring(url) ->
@@ -104,6 +127,7 @@ defmodule Posthog.Client do
     end
   end
 
+  @spec api_key() :: binary()
   defp api_key do
     case Application.get_env(@app, :api_key) do
       key when is_bitstring(key) ->
@@ -121,13 +145,16 @@ defmodule Posthog.Client do
     end
   end
 
+  @spec encode(term(), module()) :: iodata()
   defp encode(data, Jason), do: Jason.encode_to_iodata!(data)
   defp encode(data, library), do: library.encode!(data)
 
+  @spec json_library() :: module()
   defp json_library do
     Application.get_env(@app, :json_library, Jason)
   end
 
+  @spec api_version() :: pos_integer()
   defp api_version do
     Application.get_env(@app, :version, 3)
   end
