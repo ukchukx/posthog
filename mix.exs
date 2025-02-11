@@ -5,7 +5,7 @@ defmodule Posthog.MixProject do
     [
       app: :posthog,
       version: "0.3.0",
-      elixir: "~> 1.8",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
@@ -19,7 +19,7 @@ defmodule Posthog.MixProject do
 
   defp description do
     """
-    Elixir HTTP client for Posthog.
+    Official PostHog Elixir HTTP client.
     """
   end
 
@@ -27,9 +27,9 @@ defmodule Posthog.MixProject do
     [
       name: :posthog,
       files: ["lib", "mix.exs", "README.md", "LICENSE"],
-      maintainers: ["Nick Kezhaya"],
+      maintainers: ["PostHog"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/whitepaperclip/posthog"}
+      links: %{"GitHub" => "https://github.com/posthog/posthog-elixir"}
     ]
   end
 

@@ -104,3 +104,29 @@ Posthog.feature_flag_enabled?("feature-2", "distinct-id")
 
 true
 ```
+
+## Local Development
+
+We suggest you use `asdf` to install Elixir + Erlang
+
+```sh
+asdf install
+```
+
+Then, install elixir dependencies
+
+```sh
+mix deps.get
+mix install
+```
+
+### Failed compilation because of missing WX libraries
+
+Depending on your setup you might need to disable WX to get Erlang to build
+
+```sh
+export KERL_CONFIGURE_OPTIONS="--without-wx"
+asdf install
+```
+
+To persist this setting, add it to `~/.bashrc`, `~/.zshrc`, or `~/.profile`.

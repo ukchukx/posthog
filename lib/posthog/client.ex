@@ -57,11 +57,9 @@ defmodule Posthog.Client do
       |> Map.put(:api_key, api_key())
       |> encode(json_library())
 
-    api_url()
-    |> URI.merge(path)
-    |> URI.append_query("v=#{api_version()}")
-    |> URI.to_string()
-    |> :hackney.post(headers, body)
+    url = api_url() <> path <> "?v=#{api_version()}"
+
+    :hackney.post(url, headers, body)
     |> handle()
   end
 
