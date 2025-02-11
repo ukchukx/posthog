@@ -37,7 +37,8 @@ defmodule Posthog.MixProject do
     [
       {:hackney, "~> 1.20"},
       {:jason, "~> 1.4", optional: true},
-      {:ex_doc, ">= 0.0.0", only: [:doc]}
+      {:ex_doc, ">= 0.0.0", only: [:doc]},
+      {:dialyxir, "~> 1.3", only: [:dev, :test], runtime: false}
     ]
   end
 end
