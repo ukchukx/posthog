@@ -15,6 +15,9 @@ defmodule Posthog.Client do
           timestamp: timestamp()
         ]
 
+  @lib_version Mix.Project.config()[:version]
+  @lib_name "posthog-elixir"
+
   @spec headers(headers()) :: headers()
   defp headers(additional_headers \\ []) do
     Enum.concat(additional_headers || [], [{"content-type", "application/json"}])
@@ -67,8 +70,9 @@ defmodule Posthog.Client do
   end
 
   @spec build_event(event(), properties(), timestamp()) :: map()
-  defp build_event(event, properties, timestamp) do
-    %{event: to_string(event), properties: Map.new(properties), timestamp: timestamp}
+  def build_event(event, properties, timestamp) do
+    properties = Map.merge(lib_properties(), Map.new(properties))
+    %{event: to_string(event), properties: properties, timestamp: timestamp}
   end
 
   @spec post!(binary(), map(), headers()) :: {:ok, response()} | {:error, response() | term()}
@@ -157,5 +161,13 @@ defmodule Posthog.Client do
   @spec api_version() :: pos_integer()
   defp api_version do
     Application.get_env(@app, :version, 3)
+  end
+
+  @spec lib_properties() :: map()
+  defp lib_properties do
+    %{
+      "$lib" => @lib_name,
+      "$lib_version" => @lib_version
+    }
   end
 end
