@@ -41,9 +41,9 @@ defmodule Posthog.MixProject do
 
   defp deps do
     [
-      {:hackney, "~> 1.20"},
       {:dialyxir, "~> 1.3", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:doc]},
+      {:hackney, "~> 1.20"},
       {:jason, "~> 1.4", optional: true},
       {:mimic, "~> 1.11", only: :test}
     ]
