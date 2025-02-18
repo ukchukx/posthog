@@ -45,6 +45,7 @@ defmodule Posthog.MixProject do
       {:dialyxir, "~> 1.3", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:doc]},
       {:jason, "~> 1.4", optional: true},
+      {:mimic, "~> 1.11", only: :test}
     ]
   end
 end
