@@ -15,6 +15,30 @@ defmodule PosthogTest do
                 }}
     end
 
+    test "when feature flag has a json payload, will return decoded payload" do
+      stub_with(:hackney, HackneyStub)
+
+      assert Posthog.feature_flag("my-awesome-flag-2", "user_123") ==
+               {:ok,
+                %Posthog.FeatureFlag{
+                  enabled: true,
+                  name: "my-awesome-flag-2",
+                  value: %{"color" => "blue", "animal" => "hedgehog"}
+                }}
+    end
+
+    test "when feature flag does not have a payload, will return flag value" do
+      stub_with(:hackney, HackneyStub)
+
+      assert Posthog.feature_flag("flag-thats-not-on", "user_123") ==
+               {:ok,
+                %Posthog.FeatureFlag{
+                  enabled: false,
+                  name: "flag-thats-not-on",
+                  value: nil
+                }}
+    end
+
     test "when feature flag does not exist, returns not_found" do
       stub_with(:hackney, HackneyStub)
 
