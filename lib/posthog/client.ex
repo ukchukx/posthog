@@ -253,7 +253,7 @@ defmodule Posthog.Client do
 
     url = api_url() <> path <> "?v=#{api_version()}"
 
-    :hackney.post(url, headers, body)
+    :hackney.post(url, headers, body, [])
     |> handle()
   end
 
