@@ -1,6 +1,10 @@
+## 0.4.1 - 2025-03-12
+
+Fix feature flags broken implementation - [#10]
+
 ## 0.4.0 - 2025-02-11
 
-
+Documentation + OTP/Elixir version bumps
 
 ## 0.3.0 - 2025-01-09
 
