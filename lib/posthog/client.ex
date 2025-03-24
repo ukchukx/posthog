@@ -249,6 +249,7 @@ defmodule Posthog.Client do
     |> Enum.map(fn {k, v} -> {to_string(k), deep_stringify_keys(v)} end)
     |> Enum.into(%{})
   end
+
   defp deep_stringify_keys(term) when is_list(term), do: Enum.map(term, &deep_stringify_keys/1)
   defp deep_stringify_keys(term), do: term
 
