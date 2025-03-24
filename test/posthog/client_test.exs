@@ -49,5 +49,29 @@ defmodule Posthog.ClientTest do
       assert event.properties["$lib"] == "custom"
       assert event.properties["$lib_version"] == "1.0.0"
     end
+
+    test "properties are converted from atom keys to string keys" do
+
+      event = Client.build_event(
+        "test_event",
+        %{
+          foo: "bar",
+          nested: %{
+            atom_key: 123
+          },
+        },
+        "2024-03-20"
+      )
+      assert event.properties == %{
+        "foo" => "bar",
+        "$lib" => "posthog-elixir",
+        "$lib_version" => Mix.Project.config()[:version],
+        "nested" => %{
+          "atom_key" => 123
+        },
+      }
+
+    end
   end
+
 end

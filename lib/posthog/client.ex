@@ -71,7 +71,7 @@ defmodule Posthog.Client do
   @typedoc """
   Properties that can be attached to events or feature flag requests.
   """
-  @type properties :: %{optional(String.t()) => term()}
+  @type properties :: %{optional(atom() | String.t()) => term()}
 
   @typedoc """
   Timestamp for events. Can be a DateTime, NaiveDateTime, or ISO8601 string.
@@ -239,9 +239,18 @@ defmodule Posthog.Client do
   """
   @spec build_event(event(), properties(), timestamp()) :: map()
   def build_event(event, properties, timestamp) do
-    properties = Map.merge(lib_properties(), Map.new(properties))
+    properties = Map.merge(lib_properties(), deep_stringify_keys(Map.new(properties)))
     %{event: to_string(event), properties: properties, timestamp: timestamp}
   end
+
+  @doc false
+  defp deep_stringify_keys(term) when is_map(term) do
+    term
+    |> Enum.map(fn {k, v} -> {to_string(k), deep_stringify_keys(v)} end)
+    |> Enum.into(%{})
+  end
+  defp deep_stringify_keys(term) when is_list(term), do: Enum.map(term, &deep_stringify_keys/1)
+  defp deep_stringify_keys(term), do: term
 
   @doc false
   @spec post!(binary(), map(), headers()) :: {:ok, response()} | {:error, response() | term()}
