@@ -1,3 +1,7 @@
+## 0.4.2 - 2025-03-27
+
+Allow `atom()` property keys - [#11]
+
 ## 0.4.1 - 2025-03-12
 
 Fix feature flags broken implementation - [#10]
