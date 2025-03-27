@@ -52,7 +52,7 @@ jobs:
         id: versions
         if: steps.bump-type.outputs.bump-type != 'null'
         run: |
-          OLD_VERSION=$(grep -A1 "version:" mix.exs | grep -v "elixir:" | tail -n1 | sed -E 's/.*"([^"]+)".*/\1/')
+          OLD_VERSION=$(grep 'version:' mix.exs | grep -o '"[0-9]\+\.[0-9]\+\.[0-9]\+"' | tr -d '"')
 
           # Function to bump version using cut
           bump_version() {
