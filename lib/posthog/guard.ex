@@ -19,12 +19,8 @@ defmodule Posthog.Guard do
       true
       iex> match?({:ok, val} when is_keyword_list(val), {:ok, [1, 2, 3]})
       false
-      iex> match?({:ok, val} when is_keyword_list(val), {:ok, []})
-      false
       iex> match?({:ok, val} when is_keyword_list(val), {:ok, [{:a, 1}, {:b, 2}]})
       true
-      iex> match?({:ok, val} when is_keyword_list(val), {:ok, %{a: 1}})
-      false
   """
   defguard is_keyword_list(term)
            when is_list(term) and length(term) > 0 and

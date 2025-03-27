@@ -100,17 +100,15 @@ defmodule Posthog.Client do
 
   import Posthog.Guard, only: [is_keyword_list: 1]
 
-  @doc """
-  Adds default headers to the request.
-
-  ## Parameters
-
-    * `additional_headers` - List of additional headers to include
-
-  ## Examples
-
-      headers([{"x-forwarded-for", "127.0.0.1"}])
-  """
+  # Adds default headers to the request.
+  #
+  # ## Parameters
+  #
+  #   * `additional_headers` - List of additional headers to include
+  #
+  # ## Examples
+  #
+  #     headers([{"x-forwarded-for", "127.0.0.1"}])
   @spec headers(headers()) :: headers()
   defp headers(additional_headers \\ []) do
     Enum.concat(additional_headers || [], [{"content-type", "application/json"}])
