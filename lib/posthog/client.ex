@@ -98,6 +98,8 @@ defmodule Posthog.Client do
   @lib_version Mix.Project.config()[:version]
   @lib_name "posthog-elixir"
 
+  import Posthog.Guard, only: [is_keyword_list: 1]
+
   @doc """
   Adds default headers to the request.
 
@@ -245,6 +247,12 @@ defmodule Posthog.Client do
 
   @doc false
   defp deep_stringify_keys(term) when is_map(term) do
+    term
+    |> Enum.map(fn {k, v} -> {to_string(k), deep_stringify_keys(v)} end)
+    |> Enum.into(%{})
+  end
+
+  defp deep_stringify_keys(term) when is_keyword_list(term) do
     term
     |> Enum.map(fn {k, v} -> {to_string(k), deep_stringify_keys(v)} end)
     |> Enum.into(%{})

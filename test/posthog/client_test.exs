@@ -57,7 +57,9 @@ defmodule Posthog.ClientTest do
           %{
             foo: "bar",
             nested: %{
-              atom_key: 123
+              atom_key: 123,
+              list: [1, 2, 3],
+              keyword_list: [a: 1, b: 2]
             }
           },
           "2024-03-20"
@@ -68,7 +70,9 @@ defmodule Posthog.ClientTest do
                "$lib" => "posthog-elixir",
                "$lib_version" => Mix.Project.config()[:version],
                "nested" => %{
-                 "atom_key" => 123
+                 "atom_key" => 123,
+                 "list" => [1, 2, 3],
+                 "keyword_list" => %{"a" => 1, "b" => 2}
                }
              }
     end
