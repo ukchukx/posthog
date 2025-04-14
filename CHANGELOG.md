@@ -1,6 +1,10 @@
+## 0.4.4 - 2025-04-14
+
+Fix inconsistent docs for properties - [#13]
+
 ## 0.4.3 - 2025-04-14
 
-
+Improve docs setup - [#12]
 
 ## 0.4.2 - 2025-03-27
 
