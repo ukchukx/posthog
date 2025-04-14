@@ -44,7 +44,6 @@ defmodule Posthog.MixProject do
 
   defp docs do
     [
-      cover: "docs/cover.jpeg",
       favicon: "docs/favicon.svg",
       logo: "docs/favicon.svg",
       source_ref: "v#{@version}",
