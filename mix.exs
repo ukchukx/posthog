@@ -1,6 +1,8 @@
 defmodule Posthog.MixProject do
   use Mix.Project
 
+  @version "0.4.2"
+
   def project do
     [
       app: :posthog,
@@ -9,9 +11,9 @@ defmodule Posthog.MixProject do
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
-      source_url: "https://github.com/posthog/posthog-elixir",
+      docs: docs(),
       start_permanent: Mix.env() == :prod,
-      version: "0.4.2"
+      version: @version
     ]
   end
 
@@ -37,6 +39,17 @@ defmodule Posthog.MixProject do
       maintainers: ["PostHog"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/posthog/posthog-elixir"}
+    ]
+  end
+
+  defp docs do
+    [
+      cover: "docs/cover.jpeg",
+      favicon: "docs/favicon.svg",
+      logo: "docs/favicon.svg",
+      source_ref: "v#{@version}",
+      source_url: "https://github.com/posthog/posthog-elixir",
+      extras: ["README.md"]
     ]
   end
 
