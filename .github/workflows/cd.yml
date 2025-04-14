@@ -52,7 +52,7 @@ jobs:
         id: versions
         if: steps.bump-type.outputs.bump-type != 'null'
         run: |
-          OLD_VERSION=$(grep 'version:' mix.exs | grep -o '"[0-9]\+\.[0-9]\+\.[0-9]\+"' | tr -d '"')
+          OLD_VERSION=$(grep '@version "' mix.exs | grep -o '"[0-9]\+\.[0-9]\+\.[0-9]\+"' | tr -d '"')
 
           # Function to bump version using cut
           bump_version() {
@@ -81,7 +81,7 @@ jobs:
       - name: Update version in mix.exs
         if: steps.bump-type.outputs.bump-type != 'null'
         run: |
-          sed -i "s/version: \"${{ steps.versions.outputs.old-version }}\"/version: \"${{ steps.versions.outputs.new-version }}\"/" mix.exs
+          sed -i "s/@version \"${{ steps.versions.outputs.old-version }}\"/@version \"${{ steps.versions.outputs.new-version }}\"/" mix.exs
 
       - name: Update CHANGELOG.md
         run: |
@@ -96,7 +96,8 @@ jobs:
         uses: EndBug/add-and-commit@v7
         with:
           branch: ${{ github.event.pull_request.base.ref }}
-          message: "chore: Bump version to ${{ steps.versions.outputs.new-version }}"
+          tag: "v${{ steps.versions.outputs.new-version }}"
+          message: "chore: Bump version to v${{ steps.versions.outputs.new-version }}"
           github_token: ${{ secrets.POSTHOG_BOT_GITHUB_TOKEN }}
 
       - name: Publish to Hex.pm
