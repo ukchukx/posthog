@@ -206,6 +206,14 @@ defmodule Posthog.Client do
   @spec feature_flags(binary(), opts()) ::
           {:ok, Posthog.FeatureFlag.flag_response()} | {:error, response() | term()}
   def feature_flags(distinct_id, opts) do
+    case decide_request(distinct_id, opts) do
+      {:ok, response} ->
+        {:ok, %{feature_flags: response.feature_flags, feature_flag_payloads: response.feature_flag_payloads}}
+      err -> err
+    end
+  end
+
+  defp decide_request(distinct_id, opts) do
     body =
       opts
       |> Keyword.take(~w[groups group_properties person_properties]a)
@@ -213,7 +221,6 @@ defmodule Posthog.Client do
 
     case post!("/decide", body, headers(opts[:headers])) do
       {:ok, %{body: body}} ->
-        # Handle v4 response format
         if Map.has_key?(body, "flags") do
           flags = body["flags"]
           feature_flags = Map.new(flags, fn {k, v} ->
@@ -225,15 +232,17 @@ defmodule Posthog.Client do
 
           {:ok,
            %{
+             flags: flags,
              feature_flags: feature_flags,
-             feature_flag_payloads: feature_flag_payloads
+             feature_flag_payloads: feature_flag_payloads,
+             request_id: body["request_id"]
            }}
         else
-          # Handle v3 response format
           {:ok,
            %{
              feature_flags: Map.get(body, "featureFlags", %{}),
-             feature_flag_payloads: decode_feature_flag_payloads(body)
+             feature_flag_payloads: decode_feature_flag_payloads(body),
+             request_id: body["request_id"]
            }}
         end
 
