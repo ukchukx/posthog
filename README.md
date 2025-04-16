@@ -137,6 +137,8 @@ Posthog.feature_flags("user_123",
 
 ## Local Development
 
+Run `bin/setup` to install development dependencies or run the following commands manually:
+
 We recommend using `asdf` to manage Elixir and Erlang versions:
 
 ```sh
@@ -147,6 +149,14 @@ asdf install
 mix deps.get
 mix compile
 ```
+
+Run tests:
+
+```sh
+bin/test
+```
+
+(This runs `mix test`).
 
 ### Troubleshooting
 
