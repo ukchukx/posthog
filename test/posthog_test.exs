@@ -27,6 +27,18 @@ defmodule PosthogTest do
                 }}
     end
 
+    test "when feature flag has an array payload, will return decoded payload" do
+      stub_with(:hackney, HackneyStub)
+
+      assert Posthog.feature_flag("array-payload", "user_123") ==
+               {:ok,
+                %Posthog.FeatureFlag{
+                  enabled: true,
+                  name: "array-payload",
+                  value: [0, 1, 2]
+                }}
+    end
+
     test "when feature flag does not have a payload, will return flag value" do
       stub_with(:hackney, HackneyStub)
 
@@ -89,6 +101,18 @@ defmodule PosthogTest do
                   enabled: true,
                   name: "my-awesome-flag-2",
                   value: %{"color" => "blue", "animal" => "hedgehog"}
+                }}
+    end
+
+    test "when feature flag has an array payload, will return decoded payload" do
+      stub_with(:hackney, HackneyStubV3)
+
+      assert Posthog.feature_flag("array-payload", "user_123") ==
+               {:ok,
+                %Posthog.FeatureFlag{
+                  enabled: true,
+                  name: "array-payload",
+                  value: [0, 1, 2]
                 }}
     end
 

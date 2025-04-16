@@ -69,6 +69,21 @@
           "payload": null,
           "version": 7
       }
+    },
+    "array-payload": {
+      "key": "array-payload",
+      "enabled": true,
+      "variant": null,
+      "reason": {
+        "code": "condition_match",
+        "condition_index": 0,
+        "description": "Matched condition set 1"
+      },
+      "metadata": {
+        "id": 112102,
+        "payload": "[0, 1, 2]",
+        "version": 7
+      }
     }
   }
 }
