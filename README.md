@@ -170,6 +170,10 @@ asdf install
 
 To persist this setting, add it to your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.profile`).
 
+## Examples
+
+There's an example console project in `examples/feature_flag_demo` that shows how to use the client. Follow the instructions in [the README](examples/feature_flag_demo/README.md) to run it.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
