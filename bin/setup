@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#/ Usage: bin/setup
+#/ Description: Sets up the dependencies needed to develop this project
+source bin/helpers/_utils.sh
+set_source_and_root_dir
+
+if ! command -v asdf &> /dev/null; then
+    brew install asdf
+fi
+
+asdf plugin add erlang
+asdf plugin add elixir
+asdf install
+
+mix deps.get
+mix compile

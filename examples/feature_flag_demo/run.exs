@@ -1,0 +1,1 @@
+FeatureFlagDemo.main(System.argv()) 
