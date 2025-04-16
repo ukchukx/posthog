@@ -213,11 +213,29 @@ defmodule Posthog.Client do
 
     case post!("/decide", body, headers(opts[:headers])) do
       {:ok, %{body: body}} ->
-        {:ok,
-         %{
-           feature_flags: Map.get(body, "featureFlags", %{}),
-           feature_flag_payloads: decode_feature_flag_payloads(body)
-         }}
+        # Handle v4 response format
+        if Map.has_key?(body, "flags") do
+          flags = body["flags"]
+          feature_flags = Map.new(flags, fn {k, v} ->
+            {k, (if v["variant"], do: v["variant"], else: v["enabled"])}
+          end)
+          feature_flag_payloads = Map.new(flags, fn {k, v} ->
+            {k, (if v["metadata"]["payload"], do: decode_feature_flag_payload(v["metadata"]["payload"]), else: nil)}
+          end)
+
+          {:ok,
+           %{
+             feature_flags: feature_flags,
+             feature_flag_payloads: feature_flag_payloads
+           }}
+        else
+          # Handle v3 response format
+          {:ok,
+           %{
+             feature_flags: Map.get(body, "featureFlags", %{}),
+             feature_flag_payloads: decode_feature_flag_payloads(body)
+           }}
+        end
 
       err ->
         err
