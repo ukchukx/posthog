@@ -40,7 +40,7 @@ If the feature flag is enabled:
 
 ```bash
 Feature flag 'your-feature-flag' is ENABLED
-Value: true
+Payload: true
 ```
 
 If the feature flag is disabled:

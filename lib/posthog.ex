@@ -185,13 +185,13 @@ defmodule Posthog do
 
       # Boolean feature flag
       {:ok, flag} = Posthog.feature_flag("new-dashboard", "user_123")
-      # Returns: %Posthog.FeatureFlag{name: "new-dashboard", value: true, enabled: true}
+      # Returns: %Posthog.FeatureFlag{name: "new-dashboard", payload: true, enabled: true}
 
       # Multivariate feature flag
       {:ok, flag} = Posthog.feature_flag("pricing-test", "user_123")
       # Returns: %Posthog.FeatureFlag{
       #   name: "pricing-test",
-      #   value: %{"price" => 99, "period" => "monthly"},
+      #   payload: %{"price" => 99, "period" => "monthly"},
       #   enabled: "variant-a"
       # }
   """

@@ -69,9 +69,9 @@ defmodule FeatureFlagDemo do
            group_properties: group_properties,
            person_properties: person_properties
          ) do
-      {:ok, %{enabled: true, value: value}} ->
+      {:ok, %{enabled: true, payload: payload}} ->
         IO.puts("Feature flag '#{flag}' is ENABLED")
-        IO.puts("Value: #{inspect(value)}")
+        IO.puts("Payload: #{inspect(payload)}")
 
       {:ok, %{enabled: false}} ->
         IO.puts("Feature flag '#{flag}' is DISABLED")

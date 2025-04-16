@@ -9,7 +9,7 @@ defmodule Posthog.FeatureFlag do
 
   The `FeatureFlag` struct contains:
     * `name` - The name of the feature flag
-    * `value` - The payload value associated with the flag (can be any term)
+    * `payload` - The payload value associated with the flag (can be any term)
     * `enabled` - The evaluation result (boolean for on/off flags, string for multivariate flags)
 
   ## Examples
@@ -17,18 +17,18 @@ defmodule Posthog.FeatureFlag do
       # Boolean feature flag
       %Posthog.FeatureFlag{
         name: "new-dashboard",
-        value: true,
+        payload: true,
         enabled: true
       }
 
       # Multivariate feature flag
       %Posthog.FeatureFlag{
         name: "pricing-test",
-        value: %{"price" => 99, "period" => "monthly"},
+        payload: %{"price" => 99, "period" => "monthly"},
         enabled: "variant-a"
       }
   """
-  defstruct [:name, :value, :enabled]
+  defstruct [:name, :payload, :enabled]
 
   @typedoc """
   Represents the enabled state of a feature flag.
@@ -55,12 +55,12 @@ defmodule Posthog.FeatureFlag do
 
   Fields:
     * `name` - The name of the feature flag (string)
-    * `value` - The payload value associated with the flag (any term)
+    * `payload` - The payload value associated with the flag (any term)
     * `enabled` - The evaluation result (boolean or string)
   """
   @type t :: %__MODULE__{
           name: binary(),
-          value: term(),
+          payload: term(),
           enabled: variant()
         }
 
@@ -71,7 +71,7 @@ defmodule Posthog.FeatureFlag do
 
     * `name` - The name of the feature flag
     * `enabled` - The evaluation result (boolean or string)
-    * `value` - The payload value associated with the flag
+    * `payload` - The payload value associated with the flag
 
   ## Examples
 
@@ -83,8 +83,8 @@ defmodule Posthog.FeatureFlag do
         %{"price" => 99, "period" => "monthly"})
   """
   @spec new(binary(), variant(), term()) :: t()
-  def new(name, enabled, value) do
-    struct!(__MODULE__, name: name, enabled: enabled, value: value)
+  def new(name, enabled, payload) do
+    struct!(__MODULE__, name: name, enabled: enabled, payload: payload)
   end
 
   @doc """

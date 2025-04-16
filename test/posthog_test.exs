@@ -11,7 +11,7 @@ defmodule PosthogTest do
                 %Posthog.FeatureFlag{
                   enabled: true,
                   name: "my-awesome-flag",
-                  value: "example-payload-string"
+                  payload: "example-payload-string"
                 }}
     end
 
@@ -23,7 +23,7 @@ defmodule PosthogTest do
                 %Posthog.FeatureFlag{
                   enabled: true,
                   name: "my-awesome-flag-2",
-                  value: %{"color" => "blue", "animal" => "hedgehog"}
+                  payload: %{"color" => "blue", "animal" => "hedgehog"}
                 }}
     end
 
@@ -35,7 +35,7 @@ defmodule PosthogTest do
                 %Posthog.FeatureFlag{
                   enabled: true,
                   name: "array-payload",
-                  value: [0, 1, 2]
+                  payload: [0, 1, 2]
                 }}
     end
 
@@ -47,7 +47,7 @@ defmodule PosthogTest do
                 %Posthog.FeatureFlag{
                   enabled: false,
                   name: "flag-thats-not-on",
-                  value: nil
+                  payload: nil
                 }}
     end
 
@@ -88,7 +88,7 @@ defmodule PosthogTest do
                 %Posthog.FeatureFlag{
                   enabled: true,
                   name: "my-awesome-flag",
-                  value: "example-payload-string"
+                  payload: "example-payload-string"
                 }}
     end
 
@@ -100,7 +100,7 @@ defmodule PosthogTest do
                 %Posthog.FeatureFlag{
                   enabled: true,
                   name: "my-awesome-flag-2",
-                  value: %{"color" => "blue", "animal" => "hedgehog"}
+                  payload: %{"color" => "blue", "animal" => "hedgehog"}
                 }}
     end
 
@@ -112,7 +112,7 @@ defmodule PosthogTest do
                 %Posthog.FeatureFlag{
                   enabled: true,
                   name: "array-payload",
-                  value: [0, 1, 2]
+                  payload: [0, 1, 2]
                 }}
     end
 
@@ -124,7 +124,7 @@ defmodule PosthogTest do
                 %Posthog.FeatureFlag{
                   enabled: false,
                   name: "flag-thats-not-on",
-                  value: nil
+                  payload: nil
                 }}
     end
 
