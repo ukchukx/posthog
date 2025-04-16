@@ -197,10 +197,9 @@ defmodule Posthog do
   """
   @spec feature_flag(binary(), binary(), keyword()) :: result()
   def feature_flag(flag, distinct_id, opts \\ []) do
-    with {:ok, %{feature_flags: flags, feature_flag_payloads: feature_flag_payloads}} <-
-           feature_flags(distinct_id, opts),
-         enabled when not is_nil(enabled) <- flags[flag] do
-      {:ok, FeatureFlag.new(flag, enabled, Map.get(feature_flag_payloads, flag))}
+    with {:ok, response} <- Client._decide_request(distinct_id, opts),
+         enabled when not is_nil(enabled) <- response.feature_flags[flag] do
+      {:ok, FeatureFlag.new(flag, enabled, Map.get(response.feature_flag_payloads, flag))}
     else
       {:error, _} = err -> err
       nil -> {:error, :not_found}

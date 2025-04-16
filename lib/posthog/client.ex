@@ -206,14 +206,15 @@ defmodule Posthog.Client do
   @spec feature_flags(binary(), opts()) ::
           {:ok, Posthog.FeatureFlag.flag_response()} | {:error, response() | term()}
   def feature_flags(distinct_id, opts) do
-    case decide_request(distinct_id, opts) do
+    case _decide_request(distinct_id, opts) do
       {:ok, response} ->
         {:ok, %{feature_flags: response.feature_flags, feature_flag_payloads: response.feature_flag_payloads}}
       err -> err
     end
   end
 
-  defp decide_request(distinct_id, opts) do
+  @doc false
+  def _decide_request(distinct_id, opts) do
     body =
       opts
       |> Keyword.take(~w[groups group_properties person_properties]a)
