@@ -25,3 +25,6 @@ posthog-*.tar
 
 # Ignore .env used for local development
 .env
+
+# Ignore .DS_Store
+.DS_Store
