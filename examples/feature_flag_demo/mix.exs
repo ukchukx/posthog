@@ -13,7 +13,8 @@ defmodule FeatureFlagDemo.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :posthog]
+      extra_applications: [:logger, :posthog],
+      mod: {FeatureFlagDemo.Application, []}
     ]
   end
 
