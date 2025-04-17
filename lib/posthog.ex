@@ -22,8 +22,35 @@ defmodule Posthog do
   Optional configuration:
 
       config :posthog,
-        json_library: Jason,  # Default JSON parser (optional)
-        version: 3           # API version (optional, defaults to 3)
+        json_library: Jason,   # Default JSON parser (optional)
+        enabled_capture: true  # Whether to enable PostHog tracking (optional, defaults to true)
+                               # Set to false in development/test environments to disable tracking
+
+  ### Disabling PostHog
+
+  You can disable PostHog tracking by setting `enabled: false` in your configuration.
+  This is particularly useful in development or test environments where you don't want
+  to send actual events to PostHog.
+
+  When `enabled_capture` is set to `false`:
+  - All `Posthog.capture/3` and `Posthog.batch/3` calls will succeed silently
+  - PostHog will still communicate with the server for Feature Flags
+
+  This is useful for:
+  - Development and test environments where you don't want to pollute your PostHog instance
+  - Situations where you need to temporarily disable tracking
+
+  Example configuration for development:
+
+      # config/dev.exs
+      config :posthog,
+        enabled_capture: false  # Disable tracking in development
+
+  Example configuration for test:
+
+      # config/test.exs
+      config :posthog,
+        enabled_capture: false  # Disable tracking in test environment
 
   ## Event Tracking
 
