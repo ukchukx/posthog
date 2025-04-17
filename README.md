@@ -147,7 +147,7 @@ You can disable PostHog tracking by setting `enabled_capture: false` in your con
 
 When `enabled_capture` is set to `false`:
 
-- All `Posthog.capture/3` and `Posthog.batch/3` calls will succeed silently
+- All `Posthog.capture/3` and `Posthog.batch/2` calls will succeed silently
 - PostHog will still communicate with the server for Feature Flags
 
 This is useful for:
@@ -355,4 +355,4 @@ When contributing to this project, please ensure your code passes all the develo
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
