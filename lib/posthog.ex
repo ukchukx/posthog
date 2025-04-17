@@ -1,5 +1,3 @@
-require Logger
-
 defmodule Posthog do
   @moduledoc """
   A comprehensive Elixir client for PostHog's analytics and feature flag APIs.
@@ -142,24 +140,10 @@ defmodule Posthog do
       # Event with custom headers
       Posthog.capture("login", "user_123", %{}, headers: [{"x-forwarded-for", "127.0.0.1"}])
   """
-  @typep result() :: {:ok, term()} | {:error, term()}
-  @typep cache_key() :: {:feature_flag_called, binary(), binary()}
-  @typep feature_flag_called_event_properties_key() ::
-           :"$feature_flag"
-           | :"$feature_flag_response"
-           | :"$feature_flag_id"
-           | :"$feature_flag_version"
-           | :"$feature_flag_reason"
-           | :"$feature_flag_request_id"
-           | :distinct_id
-  @typep feature_flag_called_event_properties() :: %{
-           feature_flag_called_event_properties_key() => any() | nil
-         }
-
   alias Posthog.{Client, FeatureFlag}
 
   @spec capture(Client.event(), Client.distinct_id(), Client.properties(), Client.opts()) ::
-          result()
+          Client.result()
   defdelegate capture(event, distinct_id, properties, opts \\ []), to: Client
 
   @doc """
@@ -179,7 +163,7 @@ defmodule Posthog do
 
       Posthog.batch(events)
   """
-  @spec batch(list(tuple()), keyword()) :: result()
+  @spec batch(list(tuple()), keyword()) :: Client.result()
   defdelegate batch(events, opts \\ []), to: Client
 
   @doc """
@@ -207,7 +191,7 @@ defmodule Posthog do
         group_properties: %{company: %{industry: "tech"}}
       )
   """
-  @spec feature_flags(binary(), keyword()) :: result()
+  @spec feature_flags(binary(), keyword()) :: Client.result()
   defdelegate feature_flags(distinct_id, opts \\ []), to: Client
 
   @doc """
@@ -233,106 +217,8 @@ defmodule Posthog do
       #   enabled: "variant-a"
       # }
   """
-  @spec feature_flag(binary(), binary(), Client.feature_flag_opts()) :: result()
-  def feature_flag(flag, distinct_id, opts \\ []) do
-    with {:ok, response} <- Client._decide_request(distinct_id, opts),
-         enabled when not is_nil(enabled) <- response.feature_flags[flag] do
-      # Only capture if send_feature_flag_event is true (default)
-      if Keyword.get(opts, :send_feature_flag_event, true),
-        do:
-          capture_feature_flag_called_event(
-            distinct_id,
-            %{
-              "$feature_flag" => flag,
-              "$feature_flag_response" => enabled
-            },
-            response
-          )
-
-      {:ok, FeatureFlag.new(flag, enabled, Map.get(response.feature_flag_payloads, flag))}
-    else
-      {:error, _} = err -> err
-      nil -> {:error, :not_found}
-    end
-  end
-
-  @spec capture_feature_flag_called_event(
-          Client.distinct_id(),
-          feature_flag_called_event_properties(),
-          map()
-        ) ::
-          :ok
-  defp capture_feature_flag_called_event(distinct_id, properties, response) do
-    # Create a unique key for this distinct_id and flag combination
-    cache_key = {:feature_flag_called, distinct_id, properties["$feature_flag"]}
-
-    # Check if we've seen this combination before using Cachex
-    case Cachex.exists?(Posthog.Application.cache_name(), cache_key) do
-      {:ok, false} ->
-        do_capture_feature_flag_called_event(cache_key, distinct_id, properties, response)
-
-      # Should be `{:error, :no_cache}` but Dyalixir is wrongly assuming that doesn't exist
-      {:error, _} ->
-        # Cache doesn't exist, let's capture the event PLUS notify user they should be initing it
-        do_capture_feature_flag_called_event(cache_key, distinct_id, properties, response)
-
-        Logger.error("""
-        [posthog] Cachex process `#{inspect(Posthog.Application.cache_name())}` is not running.
-
-        ➤ This likely means you forgot to include `posthog` as an application dependency (mix.exs):
-
-            Example:
-
-            extra_applications: [..., :posthog]
-
-
-        ➤ Or, add `Posthog.Application` to your supervision tree (lib/my_lib/application.ex).
-
-            Example:
-                {Posthog.Application, []}
-        """)
-
-      {:ok, true} ->
-        # Entry already exists, no need to do anything
-        :ok
-    end
-  end
-
-  @spec do_capture_feature_flag_called_event(
-          cache_key(),
-          Client.distinct_id(),
-          feature_flag_called_event_properties(),
-          map()
-        ) :: :ok
-  defp do_capture_feature_flag_called_event(cache_key, distinct_id, properties, response) do
-    flag = properties["$feature_flag"]
-
-    properties =
-      if Map.has_key?(response, :flags) do
-        Map.merge(properties, %{
-          "$feature_flag_id" => response.flags[flag]["metadata"]["id"],
-          "$feature_flag_version" => response.flags[flag]["metadata"]["version"],
-          "$feature_flag_reason" => response.flags[flag]["reason"]["description"]
-        })
-      else
-        properties
-      end
-
-    properties =
-      if Map.get(response, :request_id) do
-        Map.put(properties, "$feature_flag_request_id", response.request_id)
-      else
-        properties
-      end
-
-    # Send the event to our server
-    Client.capture("$feature_flag_called", distinct_id, properties, [])
-
-    # Add new entry to cache using Cachex
-    Cachex.put(Posthog.Application.cache_name(), cache_key, true)
-
-    :ok
-  end
+  @spec feature_flag(binary(), binary(), Client.feature_flag_opts()) :: Client.result()
+  defdelegate feature_flag(flag, distinct_id, opts \\ []), to: Client
 
   @doc """
   Checks if a feature flag is enabled for a given distinct ID.
