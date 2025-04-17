@@ -57,11 +57,14 @@ defmodule Posthog.MixProject do
     [
       {:dialyxir, "~> 1.3", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:hackney, "~> 1.20"},
+      {:hackney, "~> 1.23"},
       {:uniq, "~> 0.6.1"},
       {:jason, "~> 1.4", optional: true},
       {:mimic, "~> 1.11", only: :test},
-      {:cachex, "~> 4.0.4"}
+      {:cachex, "~> 4.0.4"},
+      # Development tools
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.0", only: [:dev, :test], runtime: false}
     ]
   end
 end

@@ -299,9 +299,48 @@ To persist this setting, add it to your shell configuration file (`~/.bashrc`, `
 
 There's an example console project in `examples/feature_flag_demo` that shows how to use the client. Follow the instructions in [the README](examples/feature_flag_demo/README.md) to run it.
 
+## Development Tools
+
+This project uses several development tools to maintain code quality and security:
+
+### Credo
+
+Credo is a static code analysis tool that helps enforce coding standards and catch potential issues. Run it with:
+
+```bash
+mix credo
+```
+
+For more detailed output:
+
+```bash
+mix credo --verbose
+```
+
+### Mix Audit
+
+Mix Audit helps identify security vulnerabilities in dependencies. Run it with:
+
+```bash
+mix audit
+```
+
+### Mix Unused
+
+Mix Unused helps identify unused code in your project. Run it with:
+
+```bash
+mix unused
+```
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+When contributing to this project, please ensure your code passes all the development tool checks:
+
+1. Run Credo to ensure code style consistency
+2. Run Mix Audit to check for security vulnerabilities
+3. Run Mix Unused to identify any unused code
+4. Run the test suite with `mix test`
 
 ## License
 

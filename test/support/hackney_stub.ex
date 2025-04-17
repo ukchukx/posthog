@@ -1,4 +1,7 @@
 defmodule HackneyStub.State do
+  @moduledoc """
+  A GenServer module that manages the state for HackneyStub, allowing verification of HTTP requests.
+  """
   use GenServer
 
   def start_link(_opts) do
@@ -15,7 +18,7 @@ defmodule HackneyStub.State do
     GenServer.cast(name, {:set_verification, verification})
   end
 
-  def get_verification() do
+  def get_verification do
     name = {:via, Registry, {:hackney_stub_registry, self()}}
     GenServer.call(name, :get_verification)
   end
@@ -30,6 +33,9 @@ defmodule HackneyStub.State do
 end
 
 defmodule HackneyStub.Base do
+  @moduledoc """
+  A base module for creating Hackney stubs with predefined responses from fixture files.
+  """
   @fixtures_dir Path.join(__DIR__, "fixtures")
 
   defmacro __using__(fixture) do
@@ -75,9 +81,15 @@ defmodule HackneyStub.Base do
 end
 
 defmodule HackneyStub do
+  @moduledoc """
+  A stub implementation of Hackney that returns predefined responses from fixture files.
+  """
   use HackneyStub.Base, "decide.json"
 end
 
 defmodule HackneyStubV3 do
+  @moduledoc """
+  A stub implementation of Hackney that returns predefined responses from fixture files for v3 API.
+  """
   use HackneyStub.Base, "decide-v3.json"
 end

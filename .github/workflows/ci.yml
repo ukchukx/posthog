@@ -60,8 +60,8 @@ jobs:
       - name: Run tests
         run: mix test
 
-  format:
-    name: Format code
+  static-checks:
+    name: Static checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -88,3 +88,9 @@ jobs:
 
       - name: Check formatting
         run: mix format --check-formatted
+
+      - name: Run static checks
+        run: mix credo --strict
+
+      - name: Run audit
+        run: mix deps.audit
