@@ -5,7 +5,7 @@ defmodule HackneyStub.Base do
     quote do
       @fixtures_dir unquote(@fixtures_dir)
 
-      def post("https://us.posthog.com/decide?v=3", _headers, _body, _opts) do
+      def post("https://us.posthog.com/decide?v=4", _headers, _body, _opts) do
         {:ok, 200, json_fixture!(unquote(fixture)), "decide"}
       end
 

@@ -229,7 +229,7 @@ defmodule Posthog.Client do
       |> Keyword.take(~w[groups group_properties person_properties]a)
       |> Enum.reduce(%{distinct_id: distinct_id}, fn {k, v}, map -> Map.put(map, k, v) end)
 
-    case post!("/decide?v=3", body, headers(opts[:headers])) do
+    case post!("/decide?v=4", body, headers(opts[:headers])) do
       {:ok, %{body: body}} ->
         if Map.has_key?(body, "flags") do
           flags = body["flags"]
