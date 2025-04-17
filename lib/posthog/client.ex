@@ -245,14 +245,14 @@ defmodule Posthog.Client do
              flags: flags,
              feature_flags: feature_flags,
              feature_flag_payloads: feature_flag_payloads,
-             request_id: body["request_id"]
+             request_id: body["requestId"]
            }}
         else
           {:ok,
            %{
              feature_flags: Map.get(body, "featureFlags", %{}),
              feature_flag_payloads: decode_feature_flag_payloads(body),
-             request_id: body["request_id"]
+             request_id: body["requestId"]
            }}
         end
 

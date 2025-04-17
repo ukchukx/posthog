@@ -217,6 +217,12 @@ defmodule Posthog do
           properties
         end
 
+        properties = if Map.get(response, :request_id) do
+          Map.put(properties, "$feature_flag_request_id", response.request_id)
+        else
+          properties
+        end
+
         Client.capture("$feature_flag_called", properties, [])
       end
 
