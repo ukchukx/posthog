@@ -31,8 +31,7 @@ defmodule PosthogTest do
                 name: "my-awesome-flag",
                 enabled: true,
                 payload: "example-payload-string"
-              }} =
-               Posthog.feature_flag("my-awesome-flag", "user_123")
+              }} = Posthog.feature_flag("my-awesome-flag", "user_123")
     end
 
     test "when variant flag exists, returns feature flag struct with variant and captures event" do
@@ -56,8 +55,7 @@ defmodule PosthogTest do
                 name: "my-multivariate-flag",
                 enabled: "some-string-value",
                 payload: nil
-              }} =
-               Posthog.feature_flag("my-multivariate-flag", "user_123")
+              }} = Posthog.feature_flag("my-multivariate-flag", "user_123")
     end
 
     test "Does not capture feature_flag_called event twice for same distinct_id and flag key" do
@@ -86,8 +84,7 @@ defmodule PosthogTest do
                 name: "my-multivariate-flag",
                 enabled: "some-string-value",
                 payload: nil
-              }} =
-               Posthog.feature_flag("my-multivariate-flag", "user_123")
+              }} = Posthog.feature_flag("my-multivariate-flag", "user_123")
 
       # Second call with same parameters
       assert {:ok,
@@ -95,8 +92,7 @@ defmodule PosthogTest do
                 name: "my-multivariate-flag",
                 enabled: "some-string-value",
                 payload: nil
-              }} =
-               Posthog.feature_flag("my-multivariate-flag", "user_123")
+              }} = Posthog.feature_flag("my-multivariate-flag", "user_123")
 
       # Verify capture was only called once
       assert Process.get(:capture_count) == 1
@@ -151,24 +147,21 @@ defmodule PosthogTest do
                 name: "my-multivariate-flag",
                 enabled: "some-string-value",
                 payload: nil
-              }} =
-               Posthog.feature_flag("my-multivariate-flag", "user_123")
+              }} = Posthog.feature_flag("my-multivariate-flag", "user_123")
 
       assert {:ok,
               %Posthog.FeatureFlag{
                 name: "my-multivariate-flag",
                 enabled: "some-string-value",
                 payload: nil
-              }} =
-               Posthog.feature_flag("my-multivariate-flag", "user_456")
+              }} = Posthog.feature_flag("my-multivariate-flag", "user_456")
 
       assert {:ok,
               %Posthog.FeatureFlag{
                 name: "my-awesome-flag",
                 enabled: true,
                 payload: "example-payload-string"
-              }} =
-               Posthog.feature_flag("my-awesome-flag", "user_123")
+              }} = Posthog.feature_flag("my-awesome-flag", "user_123")
 
       # Verify we got all three unique combinations
       assert Process.get(:capture_count) == 3
