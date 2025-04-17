@@ -1,3 +1,34 @@
+defmodule HackneyStub.State do
+  use GenServer
+
+  def start_link(_opts) do
+    name = {:via, Registry, {:hackney_stub_registry, self()}}
+    GenServer.start_link(__MODULE__, %{verification: nil}, name: name)
+  end
+
+  def init(state) do
+    {:ok, state}
+  end
+
+  def set_verification(verification) do
+    name = {:via, Registry, {:hackney_stub_registry, self()}}
+    GenServer.cast(name, {:set_verification, verification})
+  end
+
+  def get_verification() do
+    name = {:via, Registry, {:hackney_stub_registry, self()}}
+    GenServer.call(name, :get_verification)
+  end
+
+  def handle_cast({:set_verification, verification}, state) do
+    {:noreply, %{state | verification: verification}}
+  end
+
+  def handle_call(:get_verification, _from, state) do
+    {:reply, state.verification, state}
+  end
+end
+
 defmodule HackneyStub.Base do
   @fixtures_dir Path.join(__DIR__, "fixtures")
 
@@ -40,34 +71,6 @@ defmodule HackneyStub.Base do
         HackneyStub.State.set_verification(verification)
       end
     end
-  end
-end
-
-defmodule HackneyStub.State do
-  use GenServer
-
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  end
-
-  def init(_) do
-    {:ok, %{verification: nil}}
-  end
-
-  def set_verification(verification) do
-    GenServer.cast(__MODULE__, {:set_verification, verification})
-  end
-
-  def get_verification() do
-    GenServer.call(__MODULE__, :get_verification)
-  end
-
-  def handle_cast({:set_verification, verification}, state) do
-    {:noreply, %{state | verification: verification}}
-  end
-
-  def handle_call(:get_verification, _from, state) do
-    {:reply, state.verification, state}
   end
 end
 

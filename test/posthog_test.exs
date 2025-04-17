@@ -6,6 +6,7 @@ defmodule PosthogTest do
     # Clear the cache before each test
     Cachex.clear(:posthog_feature_flag_cache)
     stub_with(:hackney, HackneyStub)
+    {:ok, _} = HackneyStub.State.start_link([])
     :ok
   end
 
