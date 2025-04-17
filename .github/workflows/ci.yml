@@ -35,6 +35,7 @@ jobs:
         run: mix deps.get
 
       - name: Check formatting
+        if: matrix.elixir == '1.16.x'
         run: mix format --check-formatted
 
       - name: Run tests
