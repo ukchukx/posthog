@@ -158,6 +158,12 @@ bin/test
 
 (This runs `mix test`).
 
+Format code:
+
+```sh
+bin/fmt
+```
+
 ### Troubleshooting
 
 If you encounter WX library issues during Erlang installation:
