@@ -129,11 +129,6 @@ defmodule Posthog.Client do
   """
   @type feature_flag_opts :: opts() | [send_feature_flag_event: boolean()]
 
-  @lib_version Mix.Project.config()[:version]
-  @lib_name "posthog-elixir"
-
-  import Posthog.Guard, only: [is_keyword_list: 1]
-
   # Adds default headers to the request.
   #
   # ## Parameters
@@ -175,18 +170,8 @@ defmodule Posthog.Client do
           {:ok, response()} | {:error, response() | term()}
   def capture(event, distinct_id, properties \\ %{}, opts \\ []) when is_list(opts) do
     if Posthog.Config.enabled_capture?() do
-      timestamp =
-        Keyword.get_lazy(opts, :timestamp, fn ->
-          DateTime.utc_now() |> DateTime.to_iso8601()
-        end)
-
-      uuid = Keyword.get(opts, :uuid)
-
-      post!(
-        "/capture",
-        build_event(event, distinct_id, properties, timestamp, uuid),
-        headers(opts[:headers])
-      )
+      posthog_event = Posthog.Event.new(event, distinct_id, properties, opts)
+      post!("/capture", Posthog.Event.to_api_payload(posthog_event), headers(opts[:headers]))
     else
       disabled_capture_response()
     end
@@ -220,11 +205,12 @@ defmodule Posthog.Client do
     if Posthog.Config.enabled_capture?() do
       timestamp = Keyword.get_lazy(opts, :timestamp, fn -> DateTime.utc_now() end)
 
-      body =
-        for {event, distinct_id, properties} <- events,
-            do: build_event(event, distinct_id, properties, timestamp)
+      posthog_events =
+        for {event, distinct_id, properties} <- events do
+          Posthog.Event.new(event, distinct_id, properties, timestamp: timestamp)
+        end
 
-      post!("/capture", %{batch: body}, headers)
+      post!("/capture", Posthog.Event.batch_payload(posthog_events), headers)
     else
       disabled_capture_response()
     end
@@ -278,54 +264,6 @@ defmodule Posthog.Client do
     end
   end
 
-  @doc """
-  Builds an event payload for the PostHog API.
-
-  ## Parameters
-
-    * `event` - The name of the event
-    * `distinct_id` - The distinct ID for the person or group
-    * `properties` - Event properties
-    * `timestamp` - Optional timestamp for the event
-    * `uuid` - Optional UUID for the event
-
-  ## Examples
-
-      build_event("page_view", "user_123", nil)
-      build_event("purchase", "user_123", %{price: 99.99}, DateTime.utc_now())
-      build_event("purchase", "user_123", %{price: 99.99}, DateTime.utc_now(), Uniq.UUID.uuid7())
-  """
-  @spec build_event(event(), distinct_id(), properties(), timestamp(), Uniq.UUID.t() | nil) ::
-          map()
-  def build_event(event, distinct_id, properties, timestamp, uuid \\ nil) do
-    properties = Map.merge(lib_properties(), deep_stringify_keys(Map.new(properties)))
-    uuid = uuid || Uniq.UUID.uuid7()
-
-    %{
-      event: to_string(event),
-      distinct_id: distinct_id,
-      properties: properties,
-      uuid: uuid,
-      timestamp: timestamp
-    }
-  end
-
-  @doc false
-  defp deep_stringify_keys(term) when is_map(term) do
-    term
-    |> Enum.map(fn {k, v} -> {to_string(k), deep_stringify_keys(v)} end)
-    |> Enum.into(%{})
-  end
-
-  defp deep_stringify_keys(term) when is_keyword_list(term) do
-    term
-    |> Enum.map(fn {k, v} -> {to_string(k), deep_stringify_keys(v)} end)
-    |> Enum.into(%{})
-  end
-
-  defp deep_stringify_keys(term) when is_list(term), do: Enum.map(term, &deep_stringify_keys/1)
-  defp deep_stringify_keys(term), do: term
-
   @doc false
   @spec post!(binary(), map(), headers()) :: {:ok, response()} | {:error, response() | term()}
   defp post!(path, %{} = body, headers) do
@@ -353,13 +291,4 @@ defmodule Posthog.Client do
   @spec encode(term(), module()) :: iodata()
   defp encode(data, Jason), do: Jason.encode_to_iodata!(data)
   defp encode(data, library), do: library.encode!(data)
-
-  @doc false
-  @spec lib_properties() :: map()
-  defp lib_properties do
-    %{
-      "$lib" => @lib_name,
-      "$lib_version" => @lib_version
-    }
-  end
 end
