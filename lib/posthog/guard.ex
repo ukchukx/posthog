@@ -17,10 +17,10 @@ defmodule Posthog.Guard do
       iex> import Posthog.Guard
       iex> match?({:ok, val} when is_keyword_list(val), {:ok, [foo: 1, bar: 2]})
       true
-      iex> match?({:ok, val} when is_keyword_list(val), {:ok, [1, 2, 3]})
-      false
       iex> match?({:ok, val} when is_keyword_list(val), {:ok, [{:a, 1}, {:b, 2}]})
       true
+      iex> match?({:ok, val} when is_keyword_list(val), {:ok, [{1, 2}, {3, 4}]})
+      false
   """
   defguard is_keyword_list(term)
            when is_list(term) and length(term) > 0 and
