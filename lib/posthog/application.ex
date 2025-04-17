@@ -8,6 +8,9 @@ defmodule Posthog.Application do
   def cache_name, do: @cache_name
 
   def start(_type, args) do
+    # Validate configuration before starting
+    Posthog.Config.validate_config!()
+
     cache_name = Keyword.get(args, :cache_name, @cache_name)
 
     children = [

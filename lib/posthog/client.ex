@@ -67,8 +67,6 @@ defmodule Posthog.Client do
       Posthog.Client.feature_flags("user_123", groups: %{team: "engineering"})
   """
 
-  @app :posthog
-
   @typedoc """
   HTTP headers in the format expected by :hackney.
   """
@@ -171,7 +169,7 @@ defmodule Posthog.Client do
   @spec capture(event(), distinct_id(), properties(), opts()) ::
           {:ok, response()} | {:error, response() | term()}
   def capture(event, distinct_id, properties \\ %{}, opts \\ []) when is_list(opts) do
-    if enabled_capture?() do
+    if Posthog.Config.enabled_capture?() do
       timestamp =
         Keyword.get_lazy(opts, :timestamp, fn ->
           DateTime.utc_now() |> DateTime.to_iso8601()
@@ -214,7 +212,7 @@ defmodule Posthog.Client do
   end
 
   def batch(events, opts, headers) do
-    if enabled_capture?() do
+    if Posthog.Config.enabled_capture?() do
       timestamp = Keyword.get_lazy(opts, :timestamp, fn -> DateTime.utc_now() end)
 
       body =
@@ -362,10 +360,10 @@ defmodule Posthog.Client do
   defp post!(path, %{} = body, headers) do
     body =
       body
-      |> Map.put(:api_key, api_key())
-      |> encode(json_library())
+      |> Map.put(:api_key, Posthog.Config.api_key())
+      |> encode(Posthog.Config.json_library())
 
-    url = api_url() <> path
+    url = Posthog.Config.api_url() <> path
 
     :hackney.post(url, headers, body, [])
     |> handle()
@@ -391,7 +389,7 @@ defmodule Posthog.Client do
     response = %{status: status, headers: headers, body: nil}
 
     with {:ok, body} <- :hackney.body(ref),
-         {:ok, json} <- json_library().decode(body) do
+         {:ok, json} <- Posthog.Config.json_library().decode(body) do
       %{response | body: json}
     else
       _ -> response
@@ -399,48 +397,6 @@ defmodule Posthog.Client do
   end
 
   @doc false
-  @spec api_url() :: binary()
-  defp api_url do
-    case Application.get_env(@app, :api_url) do
-      url when is_bitstring(url) ->
-        url
-
-      term ->
-        raise """
-        Expected a string API URL, got: #{inspect(term)}. Set a
-        URL and key in your config:
-
-            config :posthog,
-              api_url: "https://posthog.example.com",
-              api_key: "my-key"
-        """
-    end
-  end
-
-  @doc false
-  @spec api_key() :: binary()
-  defp api_key do
-    case Application.get_env(@app, :api_key) do
-      key when is_bitstring(key) ->
-        key
-
-      term ->
-        raise """
-        Expected a string API key, got: #{inspect(term)}. Set a
-        URL and key in your config:
-
-            config :posthog,
-              api_url: "https://posthog.example.com",
-              api_key: "my-key"
-        """
-    end
-  end
-
-  @doc false
-  defp enabled_capture? do
-    Application.get_env(@app, :enabled_capture, true)
-  end
-
   defp disabled_capture_response do
     {:ok, %{status: 200, headers: [], body: nil}}
   end
@@ -449,12 +405,6 @@ defmodule Posthog.Client do
   @spec encode(term(), module()) :: iodata()
   defp encode(data, Jason), do: Jason.encode_to_iodata!(data)
   defp encode(data, library), do: library.encode!(data)
-
-  @doc false
-  @spec json_library() :: module()
-  defp json_library do
-    Application.get_env(@app, :json_library, Jason)
-  end
 
   @doc false
   @spec lib_properties() :: map()
