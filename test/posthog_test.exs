@@ -9,12 +9,26 @@ defmodule PosthogTest do
       HackneyStub.verify_capture(fn decoded ->
         assert decoded["event"] == "$feature_flag_called"
         assert decoded["properties"]["distinct_id"] == "user_123"
-        assert decoded["properties"]["$feature_flag"] == "test-flag"
+        assert decoded["properties"]["$feature_flag"] == "my-awesome-flag"
         assert decoded["properties"]["$feature_flag_response"] == true
       end)
 
-      assert {:ok, %Posthog.FeatureFlag{name: "test-flag", enabled: true, payload: nil}} =
-               Posthog.feature_flag("test-flag", "user_123")
+      assert {:ok, %Posthog.FeatureFlag{name: "my-awesome-flag", enabled: true, payload: "example-payload-string"}} =
+               Posthog.feature_flag("my-awesome-flag", "user_123")
+    end
+
+    test "when variant flag exists, returns feature flag struct with variant and captures event" do
+      stub_with(:hackney, HackneyStub)
+
+      HackneyStub.verify_capture(fn decoded ->
+        assert decoded["event"] == "$feature_flag_called"
+        assert decoded["properties"]["distinct_id"] == "user_123"
+        assert decoded["properties"]["$feature_flag"] == "my-multivariate-flag"
+        assert decoded["properties"]["$feature_flag_response"] == "some-string-value"
+      end)
+
+      assert {:ok, %Posthog.FeatureFlag{name: "my-multivariate-flag", enabled: "some-string-value", payload: nil}} =
+               Posthog.feature_flag("my-multivariate-flag", "user_123")
     end
 
     test "when feature flag has a json payload, will return decoded payload" do
@@ -64,6 +78,13 @@ defmodule PosthogTest do
   describe "feature_flag_enabled?/3" do
     test "true if the feature flag is enabled" do
       stub_with(:hackney, HackneyStub)
+
+      HackneyStub.verify_capture(fn decoded ->
+        assert decoded["event"] == "$feature_flag_called"
+        assert decoded["properties"]["distinct_id"] == "user_123"
+        assert decoded["properties"]["$feature_flag"] == "my-awesome-flag"
+        assert decoded["properties"]["$feature_flag_response"] == true
+      end)
 
       assert Posthog.feature_flag_enabled?("my-awesome-flag", "user_123")
     end

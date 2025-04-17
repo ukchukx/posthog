@@ -199,6 +199,13 @@ defmodule Posthog do
   def feature_flag(flag, distinct_id, opts \\ []) do
     with {:ok, response} <- Client._decide_request(distinct_id, opts),
          enabled when not is_nil(enabled) <- response.feature_flags[flag] do
+
+      Client.capture("$feature_flag_called", %{
+        "distinct_id" => distinct_id,
+        "$feature_flag" => flag,
+        "$feature_flag_response" => enabled
+      }, opts)
+
       {:ok, FeatureFlag.new(flag, enabled, Map.get(response.feature_flag_payloads, flag))}
     else
       {:error, _} = err -> err
