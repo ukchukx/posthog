@@ -1,5 +1,6 @@
 defmodule Posthog.ClientTest do
   use ExUnit.Case, async: true
+  import Mimic
 
   # Make private functions testable
   @moduletag :capture_log
@@ -127,6 +128,40 @@ defmodule Posthog.ClientTest do
                Client.capture("test_event", %{distinct_id: "user_123"},
                  headers: [{"x-forwarded-for", "127.0.0.1"}]
                )
+    end
+  end
+
+  describe "enabled_capture" do
+    test "when enabled_capture is false, capture returns success without making request" do
+      Application.put_env(:posthog, :enabled_capture, false)
+      on_exit(fn -> Application.delete_env(:posthog, :enabled_capture) end)
+
+      assert Client.capture("test_event", %{distinct_id: "user_123"}, []) ==
+               {:ok, %{status: 200, headers: [], body: nil}}
+    end
+
+    test "when enabled_capture is false, batch returns success without making request" do
+      Application.put_env(:posthog, :enabled_capture, false)
+      on_exit(fn -> Application.delete_env(:posthog, :enabled_capture) end)
+
+      events = [
+        {"test_event", %{distinct_id: "user_123"}, nil},
+        {"another_event", %{distinct_id: "user_123"}, nil}
+      ]
+
+      assert Client.batch(events, []) ==
+               {:ok, %{status: 200, headers: [], body: nil}}
+    end
+
+    test "when enabled_capture is false, feature_flags still works" do
+      Application.put_env(:posthog, :enabled_capture, false)
+      on_exit(fn -> Application.delete_env(:posthog, :enabled_capture) end)
+
+      # Stub FF HTTP request
+      stub_with(:hackney, HackneyStub)
+
+      assert {:ok, %{feature_flags: flags}} = Client.feature_flags("user_123", [])
+      assert flags["my-awesome-flag"] == true
     end
   end
 end

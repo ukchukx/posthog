@@ -12,6 +12,7 @@ A powerful Elixir client for [PostHog](https://posthog.com), providing seamless 
 - Batch Processing: Send multiple events efficiently
 - Custom Properties: Support for user, group, and person properties
 - Flexible Configuration: Customizable JSON library and API version
+- Environment Control: Disable tracking in development/test environments
 
 ## Installation
 
@@ -74,7 +75,38 @@ config :posthog,
 
 # Optional configurations
 config :posthog,
-  json_library: Jason  # Default JSON parser (optional)
+  json_library: Jason,  # Default JSON parser (optional)
+  enabled: true        # Whether to enable PostHog tracking (optional, defaults to true)
+```
+
+### Disabling PostHog capture
+
+You can disable PostHog tracking by setting `enabled_capture: false` in your configuration. This is particularly useful in development or test environments where you don't want to send actual events to PostHog.
+
+When `enabled_capture` is set to `false`:
+
+- All `Posthog.capture/3` and `Posthog.batch/3` calls will succeed silently
+- PostHog will still communicate with the server for Feature Flags
+
+This is useful for:
+
+- Development and test environments where you don't want to pollute your PostHog instance
+- Situations where you need to temporarily disable tracking
+
+Example configuration for development:
+
+```elixir
+# config/dev.exs
+config :posthog,
+  enabled_capture: false  # Disable tracking in development
+```
+
+Example configuration for test:
+
+```elixir
+# config/test.exs
+config :posthog,
+  enabled_capture: false  # Disable tracking in test environment
 ```
 
 ## Usage

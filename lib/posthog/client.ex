@@ -19,7 +19,24 @@ defmodule Posthog.Client do
         api_url: "https://app.posthog.com",  # Required
         api_key: "phc_your_project_api_key", # Required
         json_library: Jason,                 # Optional (default: Jason)
-        version: 3                          # Optional (default: 3)
+        enabled_capture: true                # Optional (default: true)
+                                             # Set to false to disable all tracking
+
+  ### Disabling capture
+
+  When `enabled_capture` is set to `false`:
+  - All `Posthog.capture/3` and `Posthog.batch/3` calls will succeed silently
+  - PostHog will still communicate with the server for Feature Flags
+
+  This is useful for:
+  - Development and test environments where you don't want to pollute your PostHog instance
+  - Situations where you need to temporarily disable tracking
+
+  Example configuration for disabling the client:
+
+      # config/dev.exs or config/test.exs
+      config :posthog,
+        enabled_capture: false
 
   ## API Endpoints
 
@@ -154,11 +171,19 @@ defmodule Posthog.Client do
   @spec capture(event(), properties(), opts() | timestamp()) ::
           {:ok, response()} | {:error, response() | term()}
   def capture(event, params, opts) when is_list(opts) do
-    post!("/capture", build_event(event, params, opts[:timestamp]), headers(opts[:headers]))
+    if enabled_capture?() do
+      post!("/capture", build_event(event, params, opts[:timestamp]), headers(opts[:headers]))
+    else
+      disabled_capture_response()
+    end
   end
 
   def capture(event, params, timestamp) when is_bitstring(event) or is_atom(event) do
-    post!("/capture", build_event(event, params, timestamp), headers())
+    if enabled_capture?() do
+      post!("/capture", build_event(event, params, timestamp), headers())
+    else
+      disabled_capture_response()
+    end
   end
 
   @doc """
@@ -186,9 +211,12 @@ defmodule Posthog.Client do
   end
 
   def batch(events, _opts, headers) do
-    body = for {event, params, timestamp} <- events, do: build_event(event, params, timestamp)
-
-    post!("/capture", %{batch: body}, headers)
+    if enabled_capture?() do
+      body = for {event, params, timestamp} <- events, do: build_event(event, params, timestamp)
+      post!("/capture", %{batch: body}, headers)
+    else
+      disabled_capture_response()
+    end
   end
 
   @doc """
@@ -386,6 +414,15 @@ defmodule Posthog.Client do
               api_key: "my-key"
         """
     end
+  end
+
+  @doc false
+  defp enabled_capture? do
+    Application.get_env(@app, :enabled_capture, true)
+  end
+
+  defp disabled_capture_response do
+    {:ok, %{status: 200, headers: [], body: nil}}
   end
 
   @doc false
