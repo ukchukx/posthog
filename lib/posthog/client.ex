@@ -217,8 +217,14 @@ defmodule Posthog.Client do
   def feature_flags(distinct_id, opts) do
     case _decide_request(distinct_id, opts) do
       {:ok, response} ->
-        {:ok, %{feature_flags: response.feature_flags, feature_flag_payloads: response.feature_flag_payloads}}
-      err -> err
+        {:ok,
+         %{
+           feature_flags: response.feature_flags,
+           feature_flag_payloads: response.feature_flag_payloads
+         }}
+
+      err ->
+        err
     end
   end
 
@@ -233,12 +239,20 @@ defmodule Posthog.Client do
       {:ok, %{body: body}} ->
         if Map.has_key?(body, "flags") do
           flags = body["flags"]
-          feature_flags = Map.new(flags, fn {k, v} ->
-            {k, (if v["variant"], do: v["variant"], else: v["enabled"])}
-          end)
-          feature_flag_payloads = Map.new(flags, fn {k, v} ->
-            {k, (if v["metadata"]["payload"], do: decode_feature_flag_payload(v["metadata"]["payload"]), else: nil)}
-          end)
+
+          feature_flags =
+            Map.new(flags, fn {k, v} ->
+              {k, if(v["variant"], do: v["variant"], else: v["enabled"])}
+            end)
+
+          feature_flag_payloads =
+            Map.new(flags, fn {k, v} ->
+              {k,
+               if(v["metadata"]["payload"],
+                 do: decode_feature_flag_payload(v["metadata"]["payload"]),
+                 else: nil
+               )}
+            end)
 
           {:ok,
            %{

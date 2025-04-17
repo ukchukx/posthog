@@ -106,18 +106,27 @@ defmodule Posthog.ClientTest do
 
       stub(:hackney, :body, fn "ref" -> {:ok, "{}"} end)
 
-      assert {:ok, %{status: 200}} = Client.capture("test_event", %{distinct_id: "user_123"}, timestamp: timestamp)
+      assert {:ok, %{status: 200}} =
+               Client.capture("test_event", %{distinct_id: "user_123"}, timestamp: timestamp)
     end
 
     test "captures an event with custom headers" do
       stub(:hackney, :post, fn _url, headers, _body, _opts ->
-        assert Enum.sort(headers) == Enum.sort([{"content-type", "application/json"}, {"x-forwarded-for", "127.0.0.1"}])
+        assert Enum.sort(headers) ==
+                 Enum.sort([
+                   {"content-type", "application/json"},
+                   {"x-forwarded-for", "127.0.0.1"}
+                 ])
+
         {:ok, 200, [], "ref"}
       end)
 
       stub(:hackney, :body, fn "ref" -> {:ok, "{}"} end)
 
-      assert {:ok, %{status: 200}} = Client.capture("test_event", %{distinct_id: "user_123"}, headers: [{"x-forwarded-for", "127.0.0.1"}])
+      assert {:ok, %{status: 200}} =
+               Client.capture("test_event", %{distinct_id: "user_123"},
+                 headers: [{"x-forwarded-for", "127.0.0.1"}]
+               )
     end
   end
 end

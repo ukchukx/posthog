@@ -2,6 +2,13 @@ defmodule PosthogTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  setup do
+    # Clear the cache before each test
+    Cachex.clear(:posthog_feature_flag_cache)
+    stub_with(:hackney, HackneyStub)
+    :ok
+  end
+
   describe "feature_flag/3" do
     test "when feature flag exists, returns feature flag struct and captures event" do
       stub_with(:hackney, HackneyStub)
@@ -14,10 +21,17 @@ defmodule PosthogTest do
         assert decoded["properties"]["$feature_flag_id"] == 1
         assert decoded["properties"]["$feature_flag_version"] == 23
         assert decoded["properties"]["$feature_flag_reason"] == "Matched condition set 3"
-        assert decoded["properties"]["$feature_flag_request_id"] == "0f801b5b-0776-42ca-b0f7-8375c95730bf"
+
+        assert decoded["properties"]["$feature_flag_request_id"] ==
+                 "0f801b5b-0776-42ca-b0f7-8375c95730bf"
       end)
 
-      assert {:ok, %Posthog.FeatureFlag{name: "my-awesome-flag", enabled: true, payload: "example-payload-string"}} =
+      assert {:ok,
+              %Posthog.FeatureFlag{
+                name: "my-awesome-flag",
+                enabled: true,
+                payload: "example-payload-string"
+              }} =
                Posthog.feature_flag("my-awesome-flag", "user_123")
     end
 
@@ -32,11 +46,133 @@ defmodule PosthogTest do
         assert decoded["properties"]["$feature_flag_id"] == 3
         assert decoded["properties"]["$feature_flag_version"] == 1
         assert decoded["properties"]["$feature_flag_reason"] == "Matched condition set 1"
-        assert decoded["properties"]["$feature_flag_request_id"] == "0f801b5b-0776-42ca-b0f7-8375c95730bf"
+
+        assert decoded["properties"]["$feature_flag_request_id"] ==
+                 "0f801b5b-0776-42ca-b0f7-8375c95730bf"
       end)
 
-      assert {:ok, %Posthog.FeatureFlag{name: "my-multivariate-flag", enabled: "some-string-value", payload: nil}} =
+      assert {:ok,
+              %Posthog.FeatureFlag{
+                name: "my-multivariate-flag",
+                enabled: "some-string-value",
+                payload: nil
+              }} =
                Posthog.feature_flag("my-multivariate-flag", "user_123")
+    end
+
+    test "Does not capture feature_flag_called event twice for same distinct_id and flag key" do
+      stub_with(:hackney, HackneyStub)
+      copy(Posthog.Client)
+
+      # Initialize the counter in the process dictionary
+      Process.put(:capture_count, 0)
+
+      stub(Posthog.Client, :capture, fn "$feature_flag_called", properties, _opts ->
+        # Increment the counter in the process dictionary
+        Process.put(:capture_count, Process.get(:capture_count) + 1)
+        assert properties["distinct_id"] == "user_123"
+        assert properties["$feature_flag"] == "my-multivariate-flag"
+        assert properties["$feature_flag_response"] == "some-string-value"
+        assert properties["$feature_flag_id"] == 3
+        assert properties["$feature_flag_version"] == 1
+        assert properties["$feature_flag_reason"] == "Matched condition set 1"
+        assert properties["$feature_flag_request_id"] == "0f801b5b-0776-42ca-b0f7-8375c95730bf"
+        {:ok, %{status: 200}}
+      end)
+
+      # First call
+      assert {:ok,
+              %Posthog.FeatureFlag{
+                name: "my-multivariate-flag",
+                enabled: "some-string-value",
+                payload: nil
+              }} =
+               Posthog.feature_flag("my-multivariate-flag", "user_123")
+
+      # Second call with same parameters
+      assert {:ok,
+              %Posthog.FeatureFlag{
+                name: "my-multivariate-flag",
+                enabled: "some-string-value",
+                payload: nil
+              }} =
+               Posthog.feature_flag("my-multivariate-flag", "user_123")
+
+      # Verify capture was only called once
+      assert Process.get(:capture_count) == 1
+    end
+
+    test "Captures feature_flag_called event for different user IDs or flag keys" do
+      stub_with(:hackney, HackneyStub)
+      copy(Posthog.Client)
+
+      # Initialize the counter in the process dictionary
+      Process.put(:capture_count, 0)
+
+      # Keep track of seen combinations
+      Process.put(:seen_combinations, MapSet.new())
+
+      stub(Posthog.Client, :capture, fn "$feature_flag_called", properties, _opts ->
+        # Increment the counter in the process dictionary
+        Process.put(:capture_count, Process.get(:capture_count) + 1)
+
+        # Add this combination to seen combinations
+        combination = {
+          properties["distinct_id"],
+          properties["$feature_flag"],
+          properties["$feature_flag_response"]
+        }
+
+        Process.put(
+          :seen_combinations,
+          MapSet.put(Process.get(:seen_combinations), combination)
+        )
+
+        # Verify properties are correct regardless of order
+        assert properties["distinct_id"] in ["user_123", "user_456"]
+        assert properties["$feature_flag"] in ["my-multivariate-flag", "my-awesome-flag"]
+        assert properties["$feature_flag_response"] in [true, "some-string-value"]
+        assert properties["$feature_flag_id"] in [1, 3]
+        assert properties["$feature_flag_version"] in [1, 23]
+
+        assert properties["$feature_flag_reason"] in [
+                 "Matched condition set 1",
+                 "Matched condition set 3"
+               ]
+
+        assert properties["$feature_flag_request_id"] == "0f801b5b-0776-42ca-b0f7-8375c95730bf"
+
+        {:ok, %{status: 200}}
+      end)
+
+      # Call feature_flag with different combinations
+      assert {:ok,
+              %Posthog.FeatureFlag{
+                name: "my-multivariate-flag",
+                enabled: "some-string-value",
+                payload: nil
+              }} =
+               Posthog.feature_flag("my-multivariate-flag", "user_123")
+
+      assert {:ok,
+              %Posthog.FeatureFlag{
+                name: "my-multivariate-flag",
+                enabled: "some-string-value",
+                payload: nil
+              }} =
+               Posthog.feature_flag("my-multivariate-flag", "user_456")
+
+      assert {:ok,
+              %Posthog.FeatureFlag{
+                name: "my-awesome-flag",
+                enabled: true,
+                payload: "example-payload-string"
+              }} =
+               Posthog.feature_flag("my-awesome-flag", "user_123")
+
+      # Verify we got all three unique combinations
+      assert Process.get(:capture_count) == 3
+      assert MapSet.size(Process.get(:seen_combinations)) == 3
     end
 
     test "Does not capture event when send_feature_flag_event is false" do
@@ -44,8 +180,15 @@ defmodule PosthogTest do
       copy(Posthog.Client)
       reject(&Posthog.Client.capture/3)
 
-      assert {:ok, %Posthog.FeatureFlag{name: "my-multivariate-flag", enabled: "some-string-value", payload: nil}} =
-               Posthog.feature_flag("my-multivariate-flag", "user_123", send_feature_flag_event: false)
+      assert {:ok,
+              %Posthog.FeatureFlag{
+                name: "my-multivariate-flag",
+                enabled: "some-string-value",
+                payload: nil
+              }} =
+               Posthog.feature_flag("my-multivariate-flag", "user_123",
+                 send_feature_flag_event: false
+               )
     end
 
     test "when feature flag has a json payload, will return decoded payload" do

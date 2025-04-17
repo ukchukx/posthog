@@ -201,29 +201,45 @@ defmodule Posthog do
          enabled when not is_nil(enabled) <- response.feature_flags[flag] do
       # Only capture if send_feature_flag_event is true (default)
       if Keyword.get(opts, :send_feature_flag_event, true) do
-        properties = %{
-          "distinct_id" => distinct_id,
-          "$feature_flag" => flag,
-          "$feature_flag_response" => enabled
-        }
+        # Create a unique key for this distinct_id and flag combination
+        cache_key = {:feature_flag_called, distinct_id, flag}
 
-        properties = if Map.has_key?(response, :flags) do
-          Map.merge(properties, %{
-            "$feature_flag_id" => response.flags[flag]["metadata"]["id"],
-            "$feature_flag_version" => response.flags[flag]["metadata"]["version"],
-            "$feature_flag_reason" => response.flags[flag]["reason"]["description"]
-          })
-        else
-          properties
+        # Check if we've seen this combination before using Cachex
+        case Cachex.exists?(:posthog_feature_flag_cache, cache_key) do
+          {:ok, false} ->
+            properties = %{
+              "distinct_id" => distinct_id,
+              "$feature_flag" => flag,
+              "$feature_flag_response" => enabled
+            }
+
+            properties =
+              if Map.has_key?(response, :flags) do
+                Map.merge(properties, %{
+                  "$feature_flag_id" => response.flags[flag]["metadata"]["id"],
+                  "$feature_flag_version" => response.flags[flag]["metadata"]["version"],
+                  "$feature_flag_reason" => response.flags[flag]["reason"]["description"]
+                })
+              else
+                properties
+              end
+
+            properties =
+              if Map.get(response, :request_id) do
+                Map.put(properties, "$feature_flag_request_id", response.request_id)
+              else
+                properties
+              end
+
+            Client.capture("$feature_flag_called", properties, [])
+
+            # Add new entry to cache using Cachex
+            Cachex.put(:posthog_feature_flag_cache, cache_key, true)
+
+          {:ok, true} ->
+            # Entry exists, no need to do anything
+            :ok
         end
-
-        properties = if Map.get(response, :request_id) do
-          Map.put(properties, "$feature_flag_request_id", response.request_id)
-        else
-          properties
-        end
-
-        Client.capture("$feature_flag_called", properties, [])
       end
 
       {:ok, FeatureFlag.new(flag, enabled, Map.get(response.feature_flag_payloads, flag))}

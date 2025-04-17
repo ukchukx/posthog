@@ -11,11 +11,14 @@ defmodule HackneyStub.Base do
 
       def post("https://us.posthog.com/capture", _headers, body, _opts) do
         case Process.get(:capture_verification) do
-          nil -> :ok
+          nil ->
+            :ok
+
           verification ->
             decoded = Jason.decode!(body)
             verification.(decoded)
         end
+
         {:ok, 200, [], "capture"}
       end
 
