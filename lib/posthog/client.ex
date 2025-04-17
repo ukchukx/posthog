@@ -54,14 +54,14 @@ defmodule Posthog.Client do
   ## Examples
 
       # Capture an event
-      Posthog.Client.capture("page_view", %{distinct_id: "user_123"})
+      Posthog.Client.capture("page_view", "user_123")
 
       # Send batch events
       events = [
-        {"page_view", %{distinct_id: "user_123"}, nil},
-        {"click", %{distinct_id: "user_123"}, DateTime.utc_now()}
+        {"page_view", "user_123", %{}},
+        {"click", "user_123", %{}}
       ]
-      Posthog.Client.batch(events)
+      Posthog.Client.batch(events, timestamp: DateTime.utc_now())
 
       # Get feature flags
       Posthog.Client.feature_flags("user_123", groups: %{team: "engineering"})
@@ -86,6 +86,11 @@ defmodule Posthog.Client do
   @type event :: atom() | binary()
 
   @typedoc """
+  Distinct ID for the person or group.
+  """
+  @type distinct_id :: binary()
+
+  @typedoc """
   Properties that can be attached to events or feature flag requests.
   """
   @type properties :: %{optional(atom() | String.t()) => term()}
@@ -103,13 +108,15 @@ defmodule Posthog.Client do
   * `:group_properties` - Additional properties for groups
   * `:person_properties` - Properties for the person
   * `:timestamp` - Custom timestamp for events
+  * `:uuid` - Custom UUID for the event
   """
   @type opts :: [
           headers: headers(),
           groups: map(),
           group_properties: map(),
           person_properties: map(),
-          timestamp: timestamp()
+          timestamp: timestamp(),
+          uuid: Uniq.UUID.t()
         ]
 
   @typedoc """
@@ -134,7 +141,7 @@ defmodule Posthog.Client do
   #
   #     headers([{"x-forwarded-for", "127.0.0.1"}])
   @spec headers(headers()) :: headers()
-  defp headers(additional_headers \\ []) do
+  defp headers(additional_headers) do
     Enum.concat(additional_headers || [], [{"content-type", "application/json"}])
   end
 
@@ -150,37 +157,33 @@ defmodule Posthog.Client do
   ## Examples
 
       # Basic event
-      Posthog.Client.capture("page_view", %{distinct_id: "user_123"})
+      Posthog.Client.capture("page_view", "user_123")
 
       # Event with properties and timestamp
-      Posthog.Client.capture("purchase",
-        %{
-          distinct_id: "user_123",
-          product_id: "123",
-          price: 99.99
-        },
-        timestamp: DateTime.utc_now()
-      )
+      Posthog.Client.capture("purchase", "user_123", %{
+        product_id: "123",
+        price: 99.99
+      }, timestamp: DateTime.utc_now())
 
       # Event with custom headers
-      Posthog.Client.capture("login",
-        %{distinct_id: "user_123"},
-        headers: [{"x-forwarded-for", "127.0.0.1"}]
-      )
+      Posthog.Client.capture("login", "user_123", %{}, headers: [{"x-forwarded-for", "127.0.0.1"}])
   """
-  @spec capture(event(), properties(), opts() | timestamp()) ::
+  @spec capture(event(), distinct_id(), properties(), opts()) ::
           {:ok, response()} | {:error, response() | term()}
-  def capture(event, params, opts) when is_list(opts) do
+  def capture(event, distinct_id, properties \\ %{}, opts \\ []) when is_list(opts) do
     if enabled_capture?() do
-      post!("/capture", build_event(event, params, opts[:timestamp]), headers(opts[:headers]))
-    else
-      disabled_capture_response()
-    end
-  end
+      timestamp =
+        Keyword.get_lazy(opts, :timestamp, fn ->
+          DateTime.utc_now() |> DateTime.to_iso8601()
+        end)
 
-  def capture(event, params, timestamp) when is_bitstring(event) or is_atom(event) do
-    if enabled_capture?() do
-      post!("/capture", build_event(event, params, timestamp), headers())
+      uuid = Keyword.get(opts, :uuid)
+
+      post!(
+        "/capture",
+        build_event(event, distinct_id, properties, timestamp, uuid),
+        headers(opts[:headers])
+      )
     else
       disabled_capture_response()
     end
@@ -191,28 +194,33 @@ defmodule Posthog.Client do
 
   ## Parameters
 
-    * `events` - List of event tuples in the format `{event_name, properties, timestamp}`
+    * `events` - List of event tuples in the format `{event_name, distinct_id, properties}`
     * `opts` - Additional options (see `t:opts/0`)
     * `headers` - Additional HTTP headers
 
   ## Examples
 
       events = [
-        {"page_view", %{distinct_id: "user_123"}, nil},
-        {"click", %{distinct_id: "user_123", button: "signup"}, DateTime.utc_now()}
+        {"page_view", "user_123", %{}},
+        {"click", "user_123", %{button: "signup"}}
       ]
 
-      Posthog.Client.batch(events)
+      Posthog.Client.batch(events, %{timestamp: DateTime.utc_now()})
   """
-  @spec batch([{event(), properties(), timestamp()}], opts() | any(), headers()) ::
+  @spec batch([{event(), distinct_id(), properties()}], opts(), headers()) ::
           {:ok, response()} | {:error, response() | term()}
   def batch(events, opts) when is_list(opts) do
     batch(events, opts, headers(opts[:headers]))
   end
 
-  def batch(events, _opts, headers) do
+  def batch(events, opts, headers) do
     if enabled_capture?() do
-      body = for {event, params, timestamp} <- events, do: build_event(event, params, timestamp)
+      timestamp = Keyword.get_lazy(opts, :timestamp, fn -> DateTime.utc_now() end)
+
+      body =
+        for {event, distinct_id, properties} <- events,
+            do: build_event(event, distinct_id, properties, timestamp)
+
       post!("/capture", %{batch: body}, headers)
     else
       disabled_capture_response()
@@ -307,18 +315,30 @@ defmodule Posthog.Client do
   ## Parameters
 
     * `event` - The name of the event
+    * `distinct_id` - The distinct ID for the person or group
     * `properties` - Event properties
     * `timestamp` - Optional timestamp for the event
+    * `uuid` - Optional UUID for the event
 
   ## Examples
 
-      build_event("page_view", %{distinct_id: "user_123"}, nil)
-      build_event("purchase", %{distinct_id: "user_123", price: 99.99}, DateTime.utc_now())
+      build_event("page_view", "user_123", nil)
+      build_event("purchase", "user_123", %{price: 99.99}, DateTime.utc_now())
+      build_event("purchase", "user_123", %{price: 99.99}, DateTime.utc_now(), Uniq.UUID.uuid7())
   """
-  @spec build_event(event(), properties(), timestamp()) :: map()
-  def build_event(event, properties, timestamp) do
+  @spec build_event(event(), distinct_id(), properties(), timestamp(), Uniq.UUID.t() | nil) ::
+          map()
+  def build_event(event, distinct_id, properties, timestamp, uuid \\ nil) do
     properties = Map.merge(lib_properties(), deep_stringify_keys(Map.new(properties)))
-    %{event: to_string(event), properties: properties, timestamp: timestamp}
+    uuid = uuid || Uniq.UUID.uuid7()
+
+    %{
+      event: to_string(event),
+      distinct_id: distinct_id,
+      properties: properties,
+      uuid: uuid,
+      timestamp: timestamp
+    }
   end
 
   @doc false

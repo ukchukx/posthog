@@ -16,7 +16,7 @@ defmodule PosthogTest do
 
       HackneyStub.verify_capture(fn decoded ->
         assert decoded["event"] == "$feature_flag_called"
-        assert decoded["properties"]["distinct_id"] == "user_123"
+        assert decoded["distinct_id"] == "user_123"
         assert decoded["properties"]["$feature_flag"] == "my-awesome-flag"
         assert decoded["properties"]["$feature_flag_response"] == true
         assert decoded["properties"]["$feature_flag_id"] == 1
@@ -40,7 +40,7 @@ defmodule PosthogTest do
 
       HackneyStub.verify_capture(fn decoded ->
         assert decoded["event"] == "$feature_flag_called"
-        assert decoded["properties"]["distinct_id"] == "user_123"
+        assert decoded["distinct_id"] == "user_123"
         assert decoded["properties"]["$feature_flag"] == "my-multivariate-flag"
         assert decoded["properties"]["$feature_flag_response"] == "some-string-value"
         assert decoded["properties"]["$feature_flag_id"] == 3
@@ -66,10 +66,9 @@ defmodule PosthogTest do
       # Initialize the counter in the process dictionary
       Process.put(:capture_count, 0)
 
-      stub(Posthog.Client, :capture, fn "$feature_flag_called", properties, _opts ->
+      stub(Posthog.Client, :capture, fn "$feature_flag_called", _distinct_id, properties, _opts ->
         # Increment the counter in the process dictionary
         Process.put(:capture_count, Process.get(:capture_count) + 1)
-        assert properties["distinct_id"] == "user_123"
         assert properties["$feature_flag"] == "my-multivariate-flag"
         assert properties["$feature_flag_response"] == "some-string-value"
         assert properties["$feature_flag_id"] == 3
@@ -109,13 +108,13 @@ defmodule PosthogTest do
       # Keep track of seen combinations
       Process.put(:seen_combinations, MapSet.new())
 
-      stub(Posthog.Client, :capture, fn "$feature_flag_called", properties, _opts ->
+      stub(Posthog.Client, :capture, fn "$feature_flag_called", distinct_id, properties, _opts ->
         # Increment the counter in the process dictionary
         Process.put(:capture_count, Process.get(:capture_count) + 1)
 
         # Add this combination to seen combinations
         combination = {
-          properties["distinct_id"],
+          distinct_id,
           properties["$feature_flag"],
           properties["$feature_flag_response"]
         }
@@ -126,7 +125,7 @@ defmodule PosthogTest do
         )
 
         # Verify properties are correct regardless of order
-        assert properties["distinct_id"] in ["user_123", "user_456"]
+        assert distinct_id in ["user_123", "user_456"]
         assert properties["$feature_flag"] in ["my-multivariate-flag", "my-awesome-flag"]
         assert properties["$feature_flag_response"] in [true, "some-string-value"]
         assert properties["$feature_flag_id"] in [1, 3]
@@ -235,7 +234,7 @@ defmodule PosthogTest do
 
       HackneyStub.verify_capture(fn decoded ->
         assert decoded["event"] == "$feature_flag_called"
-        assert decoded["properties"]["distinct_id"] == "user_123"
+        assert decoded["distinct_id"] == "user_123"
         assert decoded["properties"]["$feature_flag"] == "my-awesome-flag"
         assert decoded["properties"]["$feature_flag_response"] == true
       end)

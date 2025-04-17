@@ -45,10 +45,35 @@ defmodule MyApp.Application do
 end
 ```
 
-#### Customizing the Cache (Optional)
+### `Posthog.capture` new signature
 
-By default, `Posthog.Application` starts a Cachex instance under the name `:posthog_feature_flag_cache`. You can override this by passing options:
+The signature to `Posthog.capture` has changed. `distinct_id` is now a required argument.
+
+Here are some examples on how the method is now used:
 
 ```elixir
-{Posthog.Application, cache_name: :my_custom_cache}
+# Basic event with `event` and `distinct_id`, both required
+Posthog.capture("page_view", "user_123")
+
+# Event with properties
+Posthog.capture("purchase", "user_123", %{
+    product_id: "prod_123",
+    price: 99.99,
+    currency: "USD"
+})
+
+# Event with custom timestamp
+Posthog.capture("signup_completed", "user_123", %{}, timestamp: DateTime.utc_now())
+
+# Event with custom UUID
+uuid = "..."
+Posthog.capture("signup_completed", "user_123", %{}, uuid: uuid)
+
+# Event with custom headers
+Posthog.capture(
+  "login",
+  "user_123",
+  %{},
+  headers: [{"x-forwarded-for", "127.0.0.1"}]
+)
 ```
