@@ -10,7 +10,7 @@ defmodule HackneyStub.Base do
       end
 
       def post("https://us.posthog.com/capture", _headers, body, _opts) do
-        case Process.get(:capture_verification) do
+        case HackneyStub.State.get_verification() do
           nil ->
             :ok
 
@@ -37,9 +37,37 @@ defmodule HackneyStub.Base do
       end
 
       def verify_capture(verification) do
-        Process.put(:capture_verification, verification)
+        HackneyStub.State.set_verification(verification)
       end
     end
+  end
+end
+
+defmodule HackneyStub.State do
+  use GenServer
+
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
+  def init(_) do
+    {:ok, %{verification: nil}}
+  end
+
+  def set_verification(verification) do
+    GenServer.cast(__MODULE__, {:set_verification, verification})
+  end
+
+  def get_verification() do
+    GenServer.call(__MODULE__, :get_verification)
+  end
+
+  def handle_cast({:set_verification, verification}, state) do
+    {:noreply, %{state | verification: verification}}
+  end
+
+  def handle_call(:get_verification, _from, state) do
+    {:reply, state.verification, state}
   end
 end
 
