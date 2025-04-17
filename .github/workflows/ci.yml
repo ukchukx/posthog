@@ -10,10 +10,30 @@ jobs:
     name: Build and test
     runs-on: ubuntu-latest
 
+    # This is a complicated set of strategies, but Elixir has a complicated set of supported versions.
+    # See https://hexdocs.pm/elixir/compatibility-and-deprecations.html
+    # See https://hexdocs.pm/elixir/compatibility-and-deprecations.html#between-elixir-and-erlang-otp
     strategy:
       matrix:
-        elixir: ["1.12.x", "1.13.x", "1.14.x", "1.15.x", "1.16.x"]
-        otp: ["24.x"]
+        elixir: ["1.14.x", "1.15.x", "1.16.x", "1.17.x", "1.18.x"]
+        otp: ["24.x", "25.x", "26.x", "27.x"]
+        exclude:
+          # Elixir 1.17 and 1.18 don't support OTP 24
+          - elixir: "1.17.x"
+            otp: "24.x"
+          - elixir: "1.18.x"
+            otp: "24.x"
+          # Elixir 1.14, 1.15 and 1.16 don't support OTP 27
+          - elixir: "1.15.x"
+            otp: "27.x"
+          - elixir: "1.16.x"
+            otp: "27.x"
+          - elixir: "1.14.x"
+            otp: "27.x"
+        include:
+          # Elixir 1.14 supports OTP 23
+          - elixir: "1.14.x"
+            otp: "23.x"
 
     steps:
       - uses: actions/checkout@v3
@@ -28,15 +48,44 @@ jobs:
         uses: actions/cache@v3
         with:
           path: deps
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-          restore-keys: ${{ runner.os }}-mix-
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}-${{ matrix.elixir }}-${{ matrix.otp }}
+          # Fallback to same elixir version, then same lockfile, then any cache
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}-${{ matrix.elixir }}-
+            ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}-
+            ${{ runner.os }}-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run tests
+        run: mix test
+
+  format:
+    name: Format code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: 1.18.3
+          otp-version: 27.3
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v3
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}-1.18.3-27.3
+          # Fallback to same elixir version, then same lockfile, then any cache
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}-1.18.3-
+            ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}-
+            ${{ runner.os }}-mix-
 
       - name: Install dependencies
         run: mix deps.get
 
       - name: Check formatting
-        if: matrix.elixir == '1.16.x'
         run: mix format --check-formatted
-
-      - name: Run tests
-        run: mix test
