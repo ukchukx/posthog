@@ -100,9 +100,7 @@ defmodule Posthog.Client do
 
   * `:send_feature_flag_event` - Whether to capture the `$feature_flag_called` event (default: true)
   """
-  @type feature_flag_opts :: [
-          send_feature_flag_event: boolean() | opts()
-        ]
+  @type feature_flag_opts :: opts() | [send_feature_flag_event: boolean()]
 
   @lib_version Mix.Project.config()[:version]
   @lib_name "posthog-elixir"
@@ -233,7 +231,7 @@ defmodule Posthog.Client do
     body =
       opts
       |> Keyword.take(~w[groups group_properties person_properties]a)
-      |> Enum.reduce(%{distinct_id: distinct_id}, fn {k, v}, map -> Map.put(map, k, v) end)
+      |> Enum.reduce(%{distinct_id: distinct_id}, fn {k, v}, acc -> Map.put(acc, k, v) end)
 
     case post!("/decide?v=4", body, headers(opts[:headers])) do
       {:ok, %{body: body}} ->

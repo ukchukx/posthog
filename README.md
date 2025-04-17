@@ -171,6 +171,15 @@ Posthog.feature_flags("user_123",
 )
 ```
 
+#### Stop sending `$feature_flag_called`
+
+We automatically send `$feature_flag_called` events so that you can properly keep track of which feature flags you're accessing via `Posthog.feature_flag()` calls. If you wanna save some events, you can disable this by adding `send_feature_flag_event: false` to the call:
+
+```elixir
+# Boolean feature flag
+{:ok, flag} = Posthog.feature_flag("new-dashboard", "user_123", send_feature_flag_event: false)
+```
+
 ## Local Development
 
 Run `bin/setup` to install development dependencies or run the following commands manually:
