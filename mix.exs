@@ -49,7 +49,7 @@ defmodule Posthog.MixProject do
       logo: "docs/favicon.svg",
       source_ref: "v#{@version}",
       source_url: "https://github.com/posthog/posthog-elixir",
-      extras: ["README.md"]
+      extras: ["README.md", "CHANGELOG.md", "MIGRATION.md"]
     ]
   end
 
