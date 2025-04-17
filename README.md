@@ -20,8 +20,45 @@ Add `posthog` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:posthog, "~> 0.3"}
+    {:posthog, "~> 1.0"}
   ]
+end
+```
+
+You'll also need to include this library under your application tree. You can do so by including `:posthog` under your `:extra_applications` key inside `mix.exs`
+
+```elixir
+# mix.exs
+def application do
+  [
+    extra_applications: [
+      # ... your existing applications
+      :posthog
+    ]
+  ]
+```
+
+### Application Customization
+
+This library includes `Posthog.Application` because we bundle `Cachex` to avoid you from being charged too often for feature-flag checks against the same `{flag, distinct_id}` tuple.
+
+This cache is located under `:posthog_feature_flag_cache`. If you want more control over the application, you can init it yourself in your own `application.ex`
+
+```elixir
+# lib/my_app/application.ex
+
+defmodule MyApp.Application do
+  use Application
+
+  def start(_type, _args) do
+    children = [
+      # Your other application children...
+      {Posthog.Application, []}
+    ]
+
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
 end
 ```
 
@@ -37,8 +74,7 @@ config :posthog,
 
 # Optional configurations
 config :posthog,
-  json_library: Jason,  # Default JSON parser (optional)
-  version: 3           # API version (optional, defaults to 3)
+  json_library: Jason  # Default JSON parser (optional)
 ```
 
 ## Usage

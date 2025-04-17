@@ -8,7 +8,7 @@ A simple console application that demonstrates how to use PostHog's feature flag
 
 ```bash
 export POSTHOG_API_KEY="your_project_api_key"
-export POSTHOG_API_URL="https://app.posthog.com"  # or your self-hosted instance
+export POSTHOG_API_URL="https://us.posthog.com"  # or `eu.posthog.com` or your self-hosted instance URL
 ```
 
 2. Install dependencies:
