@@ -1,0 +1,54 @@
+# Migration
+
+This is a migration guide for all major version bumps
+
+## v0-v1
+
+When we stabilized our library, we decided to pull some breaking changes, here are they and how you can migrate:
+
+### Minimum Elixir version bumped to v1.14
+
+The library previously supported Elixir v1.12+. You'll need to migrate to Elixir v1.14 - at least. Elixir v1.14 was launched more than 2.5 years ago, and we believe that should be enough time for you to migrate. You can check Elixir's own release announcements to understand how you should proceed with the migration.
+
+- https://elixir-lang.org/blog/2021/12/03/elixir-v1-13-0-released/
+- https://elixir-lang.org/blog/2022/09/01/elixir-v1-14-0-released/
+
+### Decide v4 - Feature Flags
+
+PostHog is consistently upgrading our internal data representation so that's better for customers each and every time. We've recently launched a new version of our `/decide` endpoint called `v4`. This endpoint is slightly different, which caused a small change in behavior for our flags.
+
+`Posthog.FeatureFlag` previously included a key `value` that to represent the internal structure of a flag. It was renamed to `payload` to:
+
+1. better represent the fact that it can be both an object and a boolean
+2. align it more closely with our other SDKs
+
+### Posthog.Application
+
+This library now depends on `Cachex`, and includes a supervision tree. To use features that require in-memory caching, you need to add `Posthog.Application` to your own supervision tree:
+
+#### Add to Your Supervision Tree
+
+```elixir
+# lib/my_app/application.ex
+defmodule MyApp.Application do
+  use Application
+
+  def start(_type, _args) do
+    children = [
+      # Your other children...
+      {Posthog.Application, []}
+    ]
+
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end
+```
+
+#### Customizing the Cache (Optional)
+
+By default, `Posthog.Application` starts a Cachex instance under the name `:posthog_feature_flag_cache`. You can override this by passing options:
+
+```elixir
+{Posthog.Application, cache_name: :my_custom_cache}
+```
