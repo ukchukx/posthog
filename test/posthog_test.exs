@@ -3,16 +3,18 @@ defmodule PosthogTest do
   import Mimic
 
   describe "feature_flag/3" do
-    test "when feature flag exists, returns feature flag struct" do
+    test "when feature flag exists, returns feature flag struct and captures event" do
       stub_with(:hackney, HackneyStub)
 
-      assert Posthog.feature_flag("my-awesome-flag", "user_123") ==
-               {:ok,
-                %Posthog.FeatureFlag{
-                  enabled: true,
-                  name: "my-awesome-flag",
-                  payload: "example-payload-string"
-                }}
+      HackneyStub.verify_capture(fn decoded ->
+        assert decoded["event"] == "$feature_flag_called"
+        assert decoded["properties"]["distinct_id"] == "user_123"
+        assert decoded["properties"]["$feature_flag"] == "test-flag"
+        assert decoded["properties"]["$feature_flag_response"] == true
+      end)
+
+      assert {:ok, %Posthog.FeatureFlag{name: "test-flag", enabled: true, payload: nil}} =
+               Posthog.feature_flag("test-flag", "user_123")
     end
 
     test "when feature flag has a json payload, will return decoded payload" do
