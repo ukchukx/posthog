@@ -76,6 +76,10 @@ defmodule FeatureFlagDemo do
       {:ok, %{enabled: false}} ->
         IO.puts("Feature flag '#{flag}' is DISABLED")
 
+      {:ok, %{enabled: variant, payload: payload}} when is_binary(variant) ->
+        IO.puts("Feature flag '#{flag}' is ENABLED with variant: #{variant}")
+        if payload, do: IO.puts("Payload: #{inspect(payload)}")
+
       {:error, %{status: 403}} ->
         IO.puts("""
         Error: Authentication failed (403 Forbidden)
@@ -98,15 +102,12 @@ defmodule FeatureFlagDemo do
         """)
 
       {:error, reason} ->
-        IO.puts("Error checking feature flag: #{inspect(reason)}")
+        IO.puts("Error: #{inspect(reason)}")
     end
   end
 
-  defp parse_json(nil), do: %{}
-  defp parse_json(json) when is_binary(json) do
-    case Jason.decode(json) do
-      {:ok, result} -> result
-      {:error, _} -> %{}
-    end
-  end
+  defp parse_json(nil), do: nil
+  defp parse_json(""), do: nil
+  defp parse_json(json) when is_binary(json), do: Jason.decode!(json)
+  defp parse_json(value), do: value
 end
