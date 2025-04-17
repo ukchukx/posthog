@@ -273,42 +273,8 @@ defmodule Posthog.Client do
       |> Enum.reduce(%{distinct_id: distinct_id}, fn {k, v}, acc -> Map.put(acc, k, v) end)
 
     case post!("/decide?v=4", body, headers(opts[:headers])) do
-      {:ok, %{body: body}} ->
-        if Map.has_key?(body, "flags") do
-          flags = body["flags"]
-
-          feature_flags =
-            Map.new(flags, fn {k, v} ->
-              {k, if(v["variant"], do: v["variant"], else: v["enabled"])}
-            end)
-
-          feature_flag_payloads =
-            Map.new(flags, fn {k, v} ->
-              {k,
-               if(v["metadata"]["payload"],
-                 do: decode_feature_flag_payload(v["metadata"]["payload"]),
-                 else: nil
-               )}
-            end)
-
-          {:ok,
-           %{
-             flags: flags,
-             feature_flags: feature_flags,
-             feature_flag_payloads: feature_flag_payloads,
-             request_id: body["requestId"]
-           }}
-        else
-          {:ok,
-           %{
-             feature_flags: Map.get(body, "featureFlags", %{}),
-             feature_flag_payloads: decode_feature_flag_payloads(body),
-             request_id: body["requestId"]
-           }}
-        end
-
-      err ->
-        err
+      {:ok, %{body: body}} -> {:ok, Posthog.FeatureFlag.process_response(body)}
+      err -> err
     end
   end
 
@@ -395,20 +361,5 @@ defmodule Posthog.Client do
       "$lib" => @lib_name,
       "$lib_version" => @lib_version
     }
-  end
-
-  defp decode_feature_flag_payloads(data) do
-    data
-    |> Map.get("featureFlagPayloads", %{})
-    |> Enum.reduce(%{}, fn {k, v}, map ->
-      Map.put(map, k, decode_feature_flag_payload(v))
-    end)
-  end
-
-  defp decode_feature_flag_payload(payload) do
-    case Jason.decode(payload) do
-      {:ok, decoded} -> decoded
-      {:error, _} -> payload
-    end
   end
 end
