@@ -220,7 +220,7 @@ defmodule Posthog.Client do
       |> Keyword.take(~w[groups group_properties person_properties]a)
       |> Enum.reduce(%{distinct_id: distinct_id}, fn {k, v}, map -> Map.put(map, k, v) end)
 
-    case post!("/decide", body, headers(opts[:headers])) do
+    case post!("/decide?v=3", body, headers(opts[:headers])) do
       {:ok, %{body: body}} ->
         if Map.has_key?(body, "flags") do
           flags = body["flags"]
@@ -296,7 +296,7 @@ defmodule Posthog.Client do
       |> Map.put(:api_key, api_key())
       |> encode(json_library())
 
-    url = api_url() <> path <> "?v=#{api_version()}"
+    url = api_url() <> path
 
     :hackney.post(url, headers, body, [])
     |> handle()
@@ -376,12 +376,6 @@ defmodule Posthog.Client do
   @spec json_library() :: module()
   defp json_library do
     Application.get_env(@app, :json_library, Jason)
-  end
-
-  @doc false
-  @spec api_version() :: pos_integer()
-  defp api_version do
-    Application.get_env(@app, :version, 3)
   end
 
   @doc false
