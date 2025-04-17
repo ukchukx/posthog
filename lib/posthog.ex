@@ -201,11 +201,23 @@ defmodule Posthog do
          enabled when not is_nil(enabled) <- response.feature_flags[flag] do
       # Only capture if send_feature_flag_event is true (default)
       if Keyword.get(opts, :send_feature_flag_event, true) do
-        Client.capture("$feature_flag_called", %{
+        properties = %{
           "distinct_id" => distinct_id,
           "$feature_flag" => flag,
           "$feature_flag_response" => enabled
-        }, [])
+        }
+
+        properties = if Map.has_key?(response, :flags) do
+          Map.merge(properties, %{
+            "$feature_flag_id" => response.flags[flag]["metadata"]["id"],
+            "$feature_flag_version" => response.flags[flag]["metadata"]["version"],
+            "$feature_flag_reason" => response.flags[flag]["reason"]["description"]
+          })
+        else
+          properties
+        end
+
+        Client.capture("$feature_flag_called", properties, [])
       end
 
       {:ok, FeatureFlag.new(flag, enabled, Map.get(response.feature_flag_payloads, flag))}

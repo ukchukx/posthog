@@ -11,6 +11,9 @@ defmodule PosthogTest do
         assert decoded["properties"]["distinct_id"] == "user_123"
         assert decoded["properties"]["$feature_flag"] == "my-awesome-flag"
         assert decoded["properties"]["$feature_flag_response"] == true
+        assert decoded["properties"]["$feature_flag_id"] == 1
+        assert decoded["properties"]["$feature_flag_version"] == 23
+        assert decoded["properties"]["$feature_flag_reason"] == "Matched condition set 3"
       end)
 
       assert {:ok, %Posthog.FeatureFlag{name: "my-awesome-flag", enabled: true, payload: "example-payload-string"}} =
@@ -25,6 +28,9 @@ defmodule PosthogTest do
         assert decoded["properties"]["distinct_id"] == "user_123"
         assert decoded["properties"]["$feature_flag"] == "my-multivariate-flag"
         assert decoded["properties"]["$feature_flag_response"] == "some-string-value"
+        assert decoded["properties"]["$feature_flag_id"] == 3
+        assert decoded["properties"]["$feature_flag_version"] == 1
+        assert decoded["properties"]["$feature_flag_reason"] == "Matched condition set 1"
       end)
 
       assert {:ok, %Posthog.FeatureFlag{name: "my-multivariate-flag", enabled: "some-string-value", payload: nil}} =
