@@ -95,6 +95,15 @@ defmodule Posthog.Client do
           timestamp: timestamp()
         ]
 
+  @typedoc """
+  Feature flag specific options that should not be passed to capture events.
+
+  * `:send_feature_flag_event` - Whether to capture the `$feature_flag_called` event (default: true)
+  """
+  @type feature_flag_opts :: [
+          send_feature_flag_event: boolean() | opts()
+        ]
+
   @lib_version Mix.Project.config()[:version]
   @lib_name "posthog-elixir"
 

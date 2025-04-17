@@ -195,16 +195,18 @@ defmodule Posthog do
       #   enabled: "variant-a"
       # }
   """
-  @spec feature_flag(binary(), binary(), keyword()) :: result()
+  @spec feature_flag(binary(), binary(), Client.feature_flag_opts()) :: result()
   def feature_flag(flag, distinct_id, opts \\ []) do
     with {:ok, response} <- Client._decide_request(distinct_id, opts),
          enabled when not is_nil(enabled) <- response.feature_flags[flag] do
-
-      Client.capture("$feature_flag_called", %{
-        "distinct_id" => distinct_id,
-        "$feature_flag" => flag,
-        "$feature_flag_response" => enabled
-      }, opts)
+      # Only capture if send_feature_flag_event is true (default)
+      if Keyword.get(opts, :send_feature_flag_event, true) do
+        Client.capture("$feature_flag_called", %{
+          "distinct_id" => distinct_id,
+          "$feature_flag" => flag,
+          "$feature_flag_response" => enabled
+        }, [])
+      end
 
       {:ok, FeatureFlag.new(flag, enabled, Map.get(response.feature_flag_payloads, flag))}
     else

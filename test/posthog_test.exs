@@ -31,6 +31,15 @@ defmodule PosthogTest do
                Posthog.feature_flag("my-multivariate-flag", "user_123")
     end
 
+    test "Does not capture event when send_feature_flag_event is false" do
+      stub_with(:hackney, HackneyStub)
+      copy(Posthog.Client)
+      reject(&Posthog.Client.capture/3)
+
+      assert {:ok, %Posthog.FeatureFlag{name: "my-multivariate-flag", enabled: "some-string-value", payload: nil}} =
+               Posthog.feature_flag("my-multivariate-flag", "user_123", send_feature_flag_event: false)
+    end
+
     test "when feature flag has a json payload, will return decoded payload" do
       stub_with(:hackney, HackneyStub)
 
