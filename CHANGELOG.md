@@ -1,6 +1,10 @@
+## 1.0.2 - 2025-04-17
+
+- More small changes to docs `147795c21a58e2308fbd43b571d9ba978c8a8a3b`
+
 ## 1.0.1 - 2025-04-17
 
-- Small changes to docs [f3578a7006fb8d6cb19f36e19b1387243a12bd21]
+- Small changes to docs `f3578a7006fb8d6cb19f36e19b1387243a12bd21`
 
 ## 1.0.0 - 2025-04-17
 
