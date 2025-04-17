@@ -32,7 +32,7 @@ defmodule Posthog.Client do
   ### Disabling capture
 
   When `enabled_capture` is set to `false`:
-  - All `Posthog.capture/3` and `Posthog.batch/3` calls will succeed silently
+  - All `Posthog.capture/3` and `Posthog.batch/2` calls will succeed silently
   - PostHog will still communicate with the server for Feature Flags
 
   This is useful for:
