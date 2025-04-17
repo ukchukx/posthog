@@ -9,10 +9,31 @@ defmodule Posthog.ClientTest do
   alias Posthog.Client
 
   describe "build_event/3" do
-    test "includes library information in properties" do
-      event = Client.build_event("test_event", %{}, "2024-03-20")
+    test "includes all base properties" do
+      event = Client.build_event("test_event", "user_123", %{}, "2024-03-20", "fake-uuid")
 
       assert event.event == "test_event"
+      assert event.distinct_id == "user_123"
+      assert event.timestamp == "2024-03-20"
+      assert event.uuid == "fake-uuid"
+      assert event.properties["$lib"] == "posthog-elixir"
+      assert event.properties["$lib_version"] == Mix.Project.config()[:version]
+    end
+
+    test "generates valid uuid if not passed in" do
+      event = Client.build_event("test_event", "user_123", %{}, "2024-03-20")
+
+      # Don't assert on the value of the uuid, just that it's a valid-ish uuid
+      assert event.uuid
+      assert is_binary(event.uuid)
+      assert String.length(event.uuid) == 36
+    end
+
+    test "includes library information in properties" do
+      event = Client.build_event("test_event", "user_123", %{}, "2024-03-20")
+
+      assert event.event == "test_event"
+      assert event.distinct_id == "user_123"
       assert event.timestamp == "2024-03-20"
 
       assert event.properties["$lib"] == "posthog-elixir"
@@ -23,6 +44,7 @@ defmodule Posthog.ClientTest do
       event =
         Client.build_event(
           "test_event",
+          "user_123",
           %{"user_id" => 123, "custom" => "value"},
           "2024-03-20"
         )
@@ -35,15 +57,18 @@ defmodule Posthog.ClientTest do
     end
 
     test "converts atom event names to strings" do
-      event = Client.build_event(:test_event, %{}, "2024-03-20")
+      event = Client.build_event(:test_event, "user_123", %{}, "2024-03-20")
 
       assert event.event == "test_event"
+      assert event.distinct_id == "user_123"
+      assert event.timestamp == "2024-03-20"
     end
 
     test "user properties override library properties" do
       event =
         Client.build_event(
           "test_event",
+          "user_123",
           %{"$lib" => "custom", "$lib_version" => "1.0.0"},
           "2024-03-20"
         )
@@ -56,6 +81,7 @@ defmodule Posthog.ClientTest do
       event =
         Client.build_event(
           "test_event",
+          "user_123",
           %{
             foo: "bar",
             nested: %{
@@ -87,13 +113,13 @@ defmodule Posthog.ClientTest do
         assert headers == [{"content-type", "application/json"}]
         decoded = Jason.decode!(body)
         assert decoded["event"] == "test_event"
-        assert decoded["properties"]["distinct_id"] == "user_123"
+        assert decoded["distinct_id"] == "user_123"
         {:ok, 200, [], "ref"}
       end)
 
       stub(:hackney, :body, fn "ref" -> {:ok, "{}"} end)
 
-      assert {:ok, %{status: 200}} = Client.capture("test_event", %{distinct_id: "user_123"}, [])
+      assert {:ok, %{status: 200}} = Client.capture("test_event", "user_123")
     end
 
     test "captures an event with timestamp" do
@@ -108,7 +134,7 @@ defmodule Posthog.ClientTest do
       stub(:hackney, :body, fn "ref" -> {:ok, "{}"} end)
 
       assert {:ok, %{status: 200}} =
-               Client.capture("test_event", %{distinct_id: "user_123"}, timestamp: timestamp)
+               Client.capture("test_event", "user_123", %{}, timestamp: timestamp)
     end
 
     test "captures an event with custom headers" do
@@ -125,7 +151,7 @@ defmodule Posthog.ClientTest do
       stub(:hackney, :body, fn "ref" -> {:ok, "{}"} end)
 
       assert {:ok, %{status: 200}} =
-               Client.capture("test_event", %{distinct_id: "user_123"},
+               Client.capture("test_event", "user_123", %{},
                  headers: [{"x-forwarded-for", "127.0.0.1"}]
                )
     end
@@ -136,7 +162,7 @@ defmodule Posthog.ClientTest do
       Application.put_env(:posthog, :enabled_capture, false)
       on_exit(fn -> Application.delete_env(:posthog, :enabled_capture) end)
 
-      assert Client.capture("test_event", %{distinct_id: "user_123"}, []) ==
+      assert Client.capture("test_event", "user_123") ==
                {:ok, %{status: 200, headers: [], body: nil}}
     end
 

@@ -60,18 +60,17 @@ defmodule Posthog do
       Posthog.capture("page_view", distinct_id: "user_123")
 
       # Event with properties
-      Posthog.capture("purchase", [
+      Posthog.capture("purchase", %{
         distinct_id: "user_123",
         product_id: "prod_123",
         price: 99.99
-      ])
+      })
 
       # Event with custom timestamp
-      Posthog.capture("signup", [distinct_id: "user_123"], DateTime.utc_now())
+      Posthog.capture("signup", "user_123", %{}, timestamp: DateTime.utc_now())
 
       # Event with custom headers (e.g., for IP forwarding)
-      Posthog.capture("login", [distinct_id: "user_123"],
-        [headers: [{"x-forwarded-for", "127.0.0.1"}]])
+      Posthog.capture("login", "user_123", %{}, headers: [{"x-forwarded-for", "127.0.0.1"}])
 
   ## Feature Flags
 
@@ -129,24 +128,21 @@ defmodule Posthog do
   ## Examples
 
       # Basic event
-      Posthog.capture("page_view", distinct_id: "user_123")
+      Posthog.capture("page_view", "user_123")
 
       # Event with properties
-      Posthog.capture("purchase", [
-        distinct_id: "user_123",
+      Posthog.capture("purchase", "user_123", %{
         product_id: "prod_123",
         price: 99.99
-      ])
+      })
 
       # Event with timestamp
-      Posthog.capture("signup", [distinct_id: "user_123"], DateTime.utc_now())
+      Posthog.capture("signup", "user_123", %{}, timestamp: DateTime.utc_now())
 
       # Event with custom headers
-      Posthog.capture("login", [distinct_id: "user_123"],
-        [headers: [{"x-forwarded-for", "127.0.0.1"}]])
+      Posthog.capture("login", "user_123", %{}, headers: [{"x-forwarded-for", "127.0.0.1"}])
   """
   @typep result() :: {:ok, term()} | {:error, term()}
-  @typep timestamp() :: DateTime.t() | NaiveDateTime.t() | String.t() | nil
   @typep cache_key() :: {:feature_flag_called, binary(), binary()}
   @typep feature_flag_called_event_properties_key() ::
            :"$feature_flag"
@@ -162,22 +158,23 @@ defmodule Posthog do
 
   alias Posthog.{Client, FeatureFlag}
 
-  @spec capture(atom() | String.t(), keyword() | map(), keyword() | timestamp()) :: result()
-  defdelegate capture(event, params, opts \\ []), to: Client
+  @spec capture(Client.event(), Client.distinct_id(), Client.properties(), Client.opts()) ::
+          result()
+  defdelegate capture(event, distinct_id, properties, opts \\ []), to: Client
 
   @doc """
   Sends multiple events to PostHog in a single request.
 
   ## Parameters
 
-    * `events` - List of event tuples in the format `{event_name, properties, timestamp}`
+    * `events` - List of event tuples in the format `{event_name, distinct_id, properties}`
     * `opts` - Optional parameters for the batch request
 
   ## Examples
 
       events = [
-        {"page_view", [distinct_id: "user_123"], nil},
-        {"button_click", [distinct_id: "user_123", button: "signup"], nil}
+        {"page_view", "user_123", %{}},
+        {"button_click", "user_123", %{button: "signup"}}
       ]
 
       Posthog.batch(events)
@@ -244,8 +241,8 @@ defmodule Posthog do
       if Keyword.get(opts, :send_feature_flag_event, true),
         do:
           capture_feature_flag_called_event(
+            distinct_id,
             %{
-              "distinct_id" => distinct_id,
               "$feature_flag" => flag,
               "$feature_flag_response" => enabled
             },
@@ -259,21 +256,25 @@ defmodule Posthog do
     end
   end
 
-  @spec capture_feature_flag_called_event(feature_flag_called_event_properties(), map()) ::
+  @spec capture_feature_flag_called_event(
+          Client.distinct_id(),
+          feature_flag_called_event_properties(),
+          map()
+        ) ::
           :ok
-  defp capture_feature_flag_called_event(properties, response) do
+  defp capture_feature_flag_called_event(distinct_id, properties, response) do
     # Create a unique key for this distinct_id and flag combination
-    cache_key = {:feature_flag_called, properties["distinct_id"], properties["$feature_flag"]}
+    cache_key = {:feature_flag_called, distinct_id, properties["$feature_flag"]}
 
     # Check if we've seen this combination before using Cachex
     case Cachex.exists?(Posthog.Application.cache_name(), cache_key) do
       {:ok, false} ->
-        do_capture_feature_flag_called_event(cache_key, properties, response)
+        do_capture_feature_flag_called_event(cache_key, distinct_id, properties, response)
 
       # Should be `{:error, :no_cache}` but Dyalixir is wrongly assuming that doesn't exist
       {:error, _} ->
         # Cache doesn't exist, let's capture the event PLUS notify user they should be initing it
-        do_capture_feature_flag_called_event(cache_key, properties, response)
+        do_capture_feature_flag_called_event(cache_key, distinct_id, properties, response)
 
         Logger.error("""
         [posthog] Cachex process `#{inspect(Posthog.Application.cache_name())}` is not running.
@@ -299,10 +300,11 @@ defmodule Posthog do
 
   @spec do_capture_feature_flag_called_event(
           cache_key(),
+          Client.distinct_id(),
           feature_flag_called_event_properties(),
           map()
         ) :: :ok
-  defp do_capture_feature_flag_called_event(cache_key, properties, response) do
+  defp do_capture_feature_flag_called_event(cache_key, distinct_id, properties, response) do
     flag = properties["$feature_flag"]
 
     properties =
@@ -324,7 +326,7 @@ defmodule Posthog do
       end
 
     # Send the event to our server
-    Client.capture("$feature_flag_called", properties, [])
+    Client.capture("$feature_flag_called", distinct_id, properties, [])
 
     # Add new entry to cache using Cachex
     Cachex.put(Posthog.Application.cache_name(), cache_key, true)

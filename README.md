@@ -70,7 +70,7 @@ Add your PostHog configuration to your application's config:
 ```elixir
 # config/config.exs
 config :posthog,
-  api_url: "https://app.posthog.com",  # Or your self-hosted PostHog instance URL
+  api_url: "https://us.posthog.com",  # Or `https://eu.posthog.com` or your self-hosted PostHog instance URL
   api_key: "phc_your_project_api_key"
 
 # Optional configurations
@@ -116,29 +116,29 @@ config :posthog,
 Simple event capture:
 
 ```elixir
-# Basic event
-Posthog.capture("page_view", distinct_id: "user_123")
+# Basic event with `event` and `distinct_id`, both required
+Posthog.capture("page_view", "user_123")
 
 # Event with properties
-Posthog.capture("purchase", [
-  distinct_id: "user_123",
-  properties: %{
+Posthog.capture("purchase", "user_123", %{
     product_id: "prod_123",
     price: 99.99,
     currency: "USD"
-  }
-])
+})
 
 # Event with custom timestamp
-Posthog.capture("signup_completed",
-  [distinct_id: "user_123"],
-  DateTime.utc_now()
-)
+Posthog.capture("signup_completed", "user_123", %{}, timestamp: DateTime.utc_now())
+
+# Event with custom UUID
+uuid = "..."
+Posthog.capture("signup_completed", "user_123", %{}, uuid: uuid)
 
 # Event with custom headers
-Posthog.capture("login",
-  [distinct_id: "user_123"],
-  [headers: [{"x-forwarded-for", "127.0.0.1"}]]
+Posthog.capture(
+  "login",
+  "user_123",
+  %{},
+  headers: [{"x-forwarded-for", "127.0.0.1"}]
 )
 ```
 
@@ -148,8 +148,8 @@ Send multiple events in a single request:
 
 ```elixir
 events = [
-  {"page_view", [distinct_id: "user_123"], nil},
-  {"button_click", [distinct_id: "user_123", properties: %{button_id: "signup"}], nil}
+  {"page_view", "user_123", %{}},
+  {"button_click", "user_123", %{button_id: "signup"}}
 ]
 
 Posthog.batch(events)
