@@ -60,7 +60,7 @@ defmodule Posthog.MixProject do
       {:hackney, "~> 1.20"},
       {:jason, "~> 1.4", optional: true},
       {:mimic, "~> 1.11", only: :test},
-      {:cachex, "~> 3.6"}
+      {:cachex, "~> 4.0.4"}
     ]
   end
 end
