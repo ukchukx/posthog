@@ -42,7 +42,7 @@ def application do
 
 ### Application Customization
 
-This library includes `Posthog.Application` because we bundle `Cachex` to avoid you from being charged too often for feature-flag checks against the same `{flag, distinct_id}` tuple.
+This library includes a `Posthog.Application` because we bundle `Cachex` to allow you to track inside PostHog your FF usage.
 
 This cache is located under `:posthog_feature_flag_cache`. If you want more control over the application, you can init it yourself in your own `application.ex`
 
@@ -76,13 +76,13 @@ config :posthog,
 
 # Optional configurations
 config :posthog,
-  json_library: Jason,  # Default JSON parser (optional)
-  enabled: true,       # Whether to enable PostHog tracking (optional, defaults to true)
+  json_library: Jason,   # Default JSON parser (optional)
+  capture_enabled: true, # Whether to enable PostHog tracking (optional, defaults to true)
   http_client: Posthog.HTTPClient.Hackney,  # Default HTTP client (optional)
-  http_client_opts: [  # HTTP client options (optional)
-    timeout: 5_000,    # Request timeout in milliseconds (default: 5_000)
-    retries: 3,        # Number of retries on failure (default: 3)
-    retry_delay: 1_000 # Delay between retries in milliseconds (default: 1_000)
+  http_client_opts: [    # HTTP client options (optional)
+    timeout: 5_000,      # Request timeout in milliseconds (default: 5_000)
+    retries: 3,          # Number of retries on failure (default: 3)
+    retry_delay: 1_000   # Delay between retries in milliseconds (default: 1_000)
   ]
 ```
 
@@ -308,13 +308,13 @@ This project uses several development tools to maintain code quality and securit
 Credo is a static code analysis tool that helps enforce coding standards and catch potential issues. Run it with:
 
 ```bash
-mix credo
+mix credo --strict
 ```
 
 For more detailed output:
 
 ```bash
-mix credo --verbose
+mix credo --strict --verbose
 ```
 
 ### Mix Audit
@@ -322,15 +322,7 @@ mix credo --verbose
 Mix Audit helps identify security vulnerabilities in dependencies. Run it with:
 
 ```bash
-mix audit
-```
-
-### Mix Unused
-
-Mix Unused helps identify unused code in your project. Run it with:
-
-```bash
-mix unused
+mix deps.audit
 ```
 
 ## Contributing
