@@ -50,7 +50,7 @@ defmodule FeatureFlagDemo do
     distinct_id = Keyword.get(opts, :distinct_id)
 
     if is_nil(flag) or is_nil(distinct_id) do
-      IO.puts("Error: --flag and --distinct-id are required")
+      IO.puts("Error: --flag and --distinct-id are both required")
       process([])
     else
       check_feature_flag(flag, distinct_id, opts)
@@ -69,9 +69,9 @@ defmodule FeatureFlagDemo do
            group_properties: group_properties,
            person_properties: person_properties
          ) do
-      {:ok, %{enabled: true, value: value}} ->
+      {:ok, %{enabled: true, payload: payload}} ->
         IO.puts("Feature flag '#{flag}' is ENABLED")
-        IO.puts("Value: #{inspect(value)}")
+        IO.puts("Payload: #{inspect(payload)}")
 
       {:ok, %{enabled: false}} ->
         IO.puts("Feature flag '#{flag}' is DISABLED")

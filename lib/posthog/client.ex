@@ -95,6 +95,13 @@ defmodule Posthog.Client do
           timestamp: timestamp()
         ]
 
+  @typedoc """
+  Feature flag specific options that should not be passed to capture events.
+
+  * `:send_feature_flag_event` - Whether to capture the `$feature_flag_called` event (default: true)
+  """
+  @type feature_flag_opts :: opts() | [send_feature_flag_event: boolean()]
+
   @lib_version Mix.Project.config()[:version]
   @lib_name "posthog-elixir"
 
@@ -206,18 +213,60 @@ defmodule Posthog.Client do
   @spec feature_flags(binary(), opts()) ::
           {:ok, Posthog.FeatureFlag.flag_response()} | {:error, response() | term()}
   def feature_flags(distinct_id, opts) do
+    case _decide_request(distinct_id, opts) do
+      {:ok, response} ->
+        {:ok,
+         %{
+           feature_flags: response.feature_flags,
+           feature_flag_payloads: response.feature_flag_payloads
+         }}
+
+      err ->
+        err
+    end
+  end
+
+  @doc false
+  def _decide_request(distinct_id, opts) do
     body =
       opts
       |> Keyword.take(~w[groups group_properties person_properties]a)
-      |> Enum.reduce(%{distinct_id: distinct_id}, fn {k, v}, map -> Map.put(map, k, v) end)
+      |> Enum.reduce(%{distinct_id: distinct_id}, fn {k, v}, acc -> Map.put(acc, k, v) end)
 
-    case post!("/decide", body, headers(opts[:headers])) do
+    case post!("/decide?v=4", body, headers(opts[:headers])) do
       {:ok, %{body: body}} ->
-        {:ok,
-         %{
-           feature_flags: Map.get(body, "featureFlags", %{}),
-           feature_flag_payloads: decode_feature_flag_payloads(body)
-         }}
+        if Map.has_key?(body, "flags") do
+          flags = body["flags"]
+
+          feature_flags =
+            Map.new(flags, fn {k, v} ->
+              {k, if(v["variant"], do: v["variant"], else: v["enabled"])}
+            end)
+
+          feature_flag_payloads =
+            Map.new(flags, fn {k, v} ->
+              {k,
+               if(v["metadata"]["payload"],
+                 do: decode_feature_flag_payload(v["metadata"]["payload"]),
+                 else: nil
+               )}
+            end)
+
+          {:ok,
+           %{
+             flags: flags,
+             feature_flags: feature_flags,
+             feature_flag_payloads: feature_flag_payloads,
+             request_id: body["requestId"]
+           }}
+        else
+          {:ok,
+           %{
+             feature_flags: Map.get(body, "featureFlags", %{}),
+             feature_flag_payloads: decode_feature_flag_payloads(body),
+             request_id: body["requestId"]
+           }}
+        end
 
       err ->
         err
@@ -268,7 +317,7 @@ defmodule Posthog.Client do
       |> Map.put(:api_key, api_key())
       |> encode(json_library())
 
-    url = api_url() <> path <> "?v=#{api_version()}"
+    url = api_url() <> path
 
     :hackney.post(url, headers, body, [])
     |> handle()
@@ -348,12 +397,6 @@ defmodule Posthog.Client do
   @spec json_library() :: module()
   defp json_library do
     Application.get_env(@app, :json_library, Jason)
-  end
-
-  @doc false
-  @spec api_version() :: pos_integer()
-  defp api_version do
-    Application.get_env(@app, :version, 3)
   end
 
   @doc false

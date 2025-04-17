@@ -1,3 +1,5 @@
+require Logger
+
 defmodule Posthog do
   @moduledoc """
   A comprehensive Elixir client for PostHog's analytics and feature flag APIs.
@@ -118,6 +120,18 @@ defmodule Posthog do
   """
   @typep result() :: {:ok, term()} | {:error, term()}
   @typep timestamp() :: DateTime.t() | NaiveDateTime.t() | String.t() | nil
+  @typep cache_key() :: {:feature_flag_called, binary(), binary()}
+  @typep feature_flag_called_event_properties_key() ::
+           :"$feature_flag"
+           | :"$feature_flag_response"
+           | :"$feature_flag_id"
+           | :"$feature_flag_version"
+           | :"$feature_flag_reason"
+           | :"$feature_flag_request_id"
+           | :distinct_id
+  @typep feature_flag_called_event_properties() :: %{
+           feature_flag_called_event_properties_key() => any() | nil
+         }
 
   alias Posthog.{Client, FeatureFlag}
 
@@ -185,26 +199,110 @@ defmodule Posthog do
 
       # Boolean feature flag
       {:ok, flag} = Posthog.feature_flag("new-dashboard", "user_123")
-      # Returns: %Posthog.FeatureFlag{name: "new-dashboard", value: true, enabled: true}
+      # Returns: %Posthog.FeatureFlag{name: "new-dashboard", payload: true, enabled: true}
 
       # Multivariate feature flag
       {:ok, flag} = Posthog.feature_flag("pricing-test", "user_123")
       # Returns: %Posthog.FeatureFlag{
       #   name: "pricing-test",
-      #   value: %{"price" => 99, "period" => "monthly"},
+      #   payload: %{"price" => 99, "period" => "monthly"},
       #   enabled: "variant-a"
       # }
   """
-  @spec feature_flag(binary(), binary(), keyword()) :: result()
+  @spec feature_flag(binary(), binary(), Client.feature_flag_opts()) :: result()
   def feature_flag(flag, distinct_id, opts \\ []) do
-    with {:ok, %{feature_flags: flags, feature_flag_payloads: feature_flag_payloads}} <-
-           feature_flags(distinct_id, opts),
-         enabled when not is_nil(enabled) <- flags[flag] do
-      {:ok, FeatureFlag.new(flag, enabled, Map.get(feature_flag_payloads, flag))}
+    with {:ok, response} <- Client._decide_request(distinct_id, opts),
+         enabled when not is_nil(enabled) <- response.feature_flags[flag] do
+      # Only capture if send_feature_flag_event is true (default)
+      if Keyword.get(opts, :send_feature_flag_event, true),
+        do:
+          capture_feature_flag_called_event(
+            %{
+              "distinct_id" => distinct_id,
+              "$feature_flag" => flag,
+              "$feature_flag_response" => enabled
+            },
+            response
+          )
+
+      {:ok, FeatureFlag.new(flag, enabled, Map.get(response.feature_flag_payloads, flag))}
     else
       {:error, _} = err -> err
       nil -> {:error, :not_found}
     end
+  end
+
+  @spec capture_feature_flag_called_event(feature_flag_called_event_properties(), map()) ::
+          :ok
+  defp capture_feature_flag_called_event(properties, response) do
+    # Create a unique key for this distinct_id and flag combination
+    cache_key = {:feature_flag_called, properties["distinct_id"], properties["$feature_flag"]}
+
+    # Check if we've seen this combination before using Cachex
+    case Cachex.exists?(Posthog.Application.cache_name(), cache_key) do
+      {:ok, false} ->
+        do_capture_feature_flag_called_event(cache_key, properties, response)
+
+      # Should be `{:error, :no_cache}` but Dyalixir is wrongly assuming that doesn't exist
+      {:error, _} ->
+        # Cache doesn't exist, let's capture the event PLUS notify user they should be initing it
+        do_capture_feature_flag_called_event(cache_key, properties, response)
+
+        Logger.error("""
+        [posthog] Cachex process `#{inspect(Posthog.Application.cache_name())}` is not running.
+
+        ➤ This likely means you forgot to include `posthog` as an application dependency (mix.exs):
+
+            Example:
+
+            extra_applications: [..., :posthog]
+
+
+        ➤ Or, add `Posthog.Application` to your supervision tree (lib/my_lib/application.ex).
+
+            Example:
+                {Posthog.Application, []}
+        """)
+
+      {:ok, true} ->
+        # Entry already exists, no need to do anything
+        :ok
+    end
+  end
+
+  @spec do_capture_feature_flag_called_event(
+          cache_key(),
+          feature_flag_called_event_properties(),
+          map()
+        ) :: :ok
+  defp do_capture_feature_flag_called_event(cache_key, properties, response) do
+    flag = properties["$feature_flag"]
+
+    properties =
+      if Map.has_key?(response, :flags) do
+        Map.merge(properties, %{
+          "$feature_flag_id" => response.flags[flag]["metadata"]["id"],
+          "$feature_flag_version" => response.flags[flag]["metadata"]["version"],
+          "$feature_flag_reason" => response.flags[flag]["reason"]["description"]
+        })
+      else
+        properties
+      end
+
+    properties =
+      if Map.get(response, :request_id) do
+        Map.put(properties, "$feature_flag_request_id", response.request_id)
+      else
+        properties
+      end
+
+    # Send the event to our server
+    Client.capture("$feature_flag_called", properties, [])
+
+    # Add new entry to cache using Cachex
+    Cachex.put(Posthog.Application.cache_name(), cache_key, true)
+
+    :ok
   end
 
   @doc """

@@ -8,7 +8,7 @@ defmodule Posthog.MixProject do
       app: :posthog,
       deps: deps(),
       description: description(),
-      elixir: "~> 1.12",
+      elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       docs: docs(),
@@ -19,7 +19,8 @@ defmodule Posthog.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {Posthog.Application, []}
     ]
   end
 
@@ -58,7 +59,8 @@ defmodule Posthog.MixProject do
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:hackney, "~> 1.20"},
       {:jason, "~> 1.4", optional: true},
-      {:mimic, "~> 1.11", only: :test}
+      {:mimic, "~> 1.11", only: :test},
+      {:cachex, "~> 4.0.4"}
     ]
   end
 end
