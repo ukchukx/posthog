@@ -24,9 +24,22 @@ PostHog is consistently upgrading our internal data representation so that's bet
 
 ### Posthog.Application
 
-This library now depends on `Cachex`, and includes a supervision tree. To use features that require in-memory caching, you need to add `Posthog.Application` to your own supervision tree:
+This library now depends on `Cachex`, and includes a supervision tree. There are 2 options:
 
-#### Add to Your Supervision Tree
+1. If you have a simple application without a `YourApp.Application` application, then you can simply add `:posthog` to your `mix.exs` `application` definition
+
+```elixir
+def application do
+    [
+      extra_applications: [
+        # ... your existing applications ...
+        :posthog
+      ],
+    ]
+  end
+```
+
+2. Or, if you're already using an Application, you can add add `Posthog.Application` to your own supervision tree:
 
 ```elixir
 # lib/my_app/application.ex

@@ -40,6 +40,25 @@ def application do
   ]
 ```
 
+or if you already have a `YourApp.Application` application, you can also add `Posthog.Application` under your supervision tree:
+
+```elixir
+# lib/my_app/application.ex
+defmodule MyApp.Application do
+  use Application
+
+  def start(_type, _args) do
+    children = [
+      # Your other children...
+      {Posthog.Application, []}
+    ]
+
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end
+```
+
 ### Application Customization
 
 This library includes a `Posthog.Application` because we bundle `Cachex` to allow you to track inside PostHog your FF usage.
