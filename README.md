@@ -13,6 +13,7 @@ A powerful Elixir client for [PostHog](https://posthog.com), providing seamless 
 - Custom Properties: Support for user, group, and person properties
 - Flexible Configuration: Customizable JSON library and API version
 - Environment Control: Disable tracking in development/test environments
+- Configurable HTTP Client: Customizable timeouts, retries, and HTTP client implementation
 
 ## Installation
 
@@ -76,7 +77,49 @@ config :posthog,
 # Optional configurations
 config :posthog,
   json_library: Jason,  # Default JSON parser (optional)
-  enabled: true        # Whether to enable PostHog tracking (optional, defaults to true)
+  enabled: true,       # Whether to enable PostHog tracking (optional, defaults to true)
+  http_client: Posthog.HTTPClient.Hackney,  # Default HTTP client (optional)
+  http_client_opts: [  # HTTP client options (optional)
+    timeout: 5_000,    # Request timeout in milliseconds (default: 5_000)
+    retries: 3,        # Number of retries on failure (default: 3)
+    retry_delay: 1_000 # Delay between retries in milliseconds (default: 1_000)
+  ]
+```
+
+### HTTP Client Configuration
+
+The library uses Hackney as the default HTTP client, but you can configure its behavior or even swap it for a different implementation by simply implementing the `Posthog.HTTPClient` behavior:
+
+```elixir
+# config/config.exs
+config :posthog,
+  # Use a different HTTP client implementation
+  http_client: MyCustomHTTPClient,
+
+  # Configure HTTP client options
+  http_client_opts: [
+    timeout: 10_000,   # 10 seconds timeout
+    retries: 5,        # 5 retries
+    retry_delay: 2_000 # 2 seconds between retries
+  ]
+```
+
+For testing, you might want to use a mock HTTP client:
+
+```elixir
+# test/support/mocks.ex
+defmodule Posthog.HTTPClient.Test do
+  @behaviour Posthog.HTTPClient
+
+  def post(url, body, headers, _opts) do
+    # Return mock responses for testing
+    {:ok, %{status: 200, headers: [], body: %{}}}
+  end
+end
+
+# config/test.exs
+config :posthog,
+  http_client: Posthog.HTTPClient.Test
 ```
 
 ### Disabling PostHog capture
@@ -248,7 +291,6 @@ If you encounter WX library issues during Erlang installation:
 ```sh
 # Disable WX during installation
 export KERL_CONFIGURE_OPTIONS="--without-wx"
-asdf install
 ```
 
 To persist this setting, add it to your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.profile`).

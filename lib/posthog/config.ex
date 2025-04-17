@@ -85,6 +85,31 @@ defmodule Posthog.Config do
   end
 
   @doc """
+  Returns the HTTP client module to use.
+
+  Defaults to Posthog.HTTPClient.Hackney if not configured.
+  """
+  def http_client do
+    Application.get_env(@app, :http_client, Posthog.HTTPClient.Hackney)
+  end
+
+  @doc """
+  Returns the HTTP client options.
+
+  Defaults to:
+  - timeout: 5_000 (5 seconds)
+  - retries: 3
+  - retry_delay: 1_000 (1 second)
+  """
+  def http_client_opts do
+    Application.get_env(@app, :http_client_opts,
+      timeout: 5_000,
+      retries: 3,
+      retry_delay: 1_000
+    )
+  end
+
+  @doc """
   Validates the entire PostHog configuration at compile time.
 
   This ensures that all required configuration is present and valid
@@ -107,6 +132,20 @@ defmodule Posthog.Config do
             end
         """
       end
+    end
+
+    # Validate HTTP client
+    http_client = http_client()
+
+    unless Code.ensure_loaded?(http_client) do
+      raise """
+      Configured HTTP client #{inspect(http_client)} is not available.
+
+      Make sure to add it to your dependencies in mix.exs:
+          defp deps do
+            [{:hackney, "~> x.x"}]
+          end
+      """
     end
 
     :ok

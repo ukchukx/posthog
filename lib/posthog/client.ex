@@ -19,8 +19,13 @@ defmodule Posthog.Client do
         api_url: "https://app.posthog.com",  # Required
         api_key: "phc_your_project_api_key", # Required
         json_library: Jason,                 # Optional (default: Jason)
-        enabled_capture: true                # Optional (default: true)
-                                             # Set to false to disable all tracking
+        enabled_capture: true,               # Optional (default: true)
+        http_client: Posthog.HTTPClient.Hackney,  # Optional (default: Posthog.HTTPClient.Hackney)
+        http_client_opts: [                  # Optional
+          timeout: 5_000,    # 5 seconds
+          retries: 3,        # Number of retries
+          retry_delay: 1_000 # 1 second between retries
+        ]
 
   ### Disabling capture
 
@@ -365,35 +370,12 @@ defmodule Posthog.Client do
 
     url = Posthog.Config.api_url() <> path
 
-    :hackney.post(url, headers, body, [])
-    |> handle()
-  end
-
-  @doc false
-  @spec handle(tuple()) :: {:ok, response()} | {:error, response() | term()}
-  defp handle({:ok, status, _headers, _ref} = resp) when div(status, 100) == 2 do
-    {:ok, to_response(resp)}
-  end
-
-  defp handle({:ok, _status, _headers, _ref} = resp) do
-    {:error, to_response(resp)}
-  end
-
-  defp handle({:error, _} = result) do
-    result
-  end
-
-  @doc false
-  @spec to_response({:ok, pos_integer(), headers(), reference()}) :: response()
-  defp to_response({_, status, headers, ref}) do
-    response = %{status: status, headers: headers, body: nil}
-
-    with {:ok, body} <- :hackney.body(ref),
-         {:ok, json} <- Posthog.Config.json_library().decode(body) do
-      %{response | body: json}
-    else
-      _ -> response
-    end
+    Posthog.Config.http_client().post(
+      url,
+      body,
+      headers,
+      Posthog.Config.http_client_opts()
+    )
   end
 
   @doc false
