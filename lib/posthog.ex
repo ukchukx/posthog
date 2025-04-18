@@ -14,7 +14,7 @@ defmodule Posthog do
   Add your PostHog configuration to your application config:
 
       config :posthog,
-        api_url: "https://app.posthog.com",  # Or your self-hosted instance
+        api_url: "https://us.i.posthog.com",  # Or your self-hosted instance
         api_key: "phc_your_project_api_key"
 
   Optional configuration:

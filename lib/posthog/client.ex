@@ -18,7 +18,7 @@ defmodule Posthog.Client do
   The client uses the following configuration from your application:
 
       config :posthog,
-        api_url: "https://app.posthog.com",  # Required
+        api_url: "https://us.i.posthog.com",  # Required
         api_key: "phc_your_project_api_key", # Required
         json_library: Jason,                 # Optional (default: Jason)
         enabled_capture: true,               # Optional (default: true)

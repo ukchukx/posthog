@@ -23,7 +23,7 @@ defmodule Posthog.Config do
         PostHog API URL is not configured. Please add it to your config:
 
             config :posthog,
-              api_url: "https://app.posthog.com"  # or your self-hosted instance
+              api_url: "https://us.i.posthog.com"  # or your self-hosted instance
         """
 
       url ->
@@ -32,7 +32,7 @@ defmodule Posthog.Config do
 
         Expected a non-empty string URL, for example:
             config :posthog,
-              api_url: "https://app.posthog.com"  # or your self-hosted instance
+              api_url: "https://us.i.posthog.com"  # or your self-hosted instance
         """
     end
   end
