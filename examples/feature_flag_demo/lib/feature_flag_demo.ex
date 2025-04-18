@@ -3,7 +3,7 @@ defmodule FeatureFlagDemo do
   A simple console application to demonstrate PostHog feature flag functionality.
   """
 
-  @default_api_url "https://app.posthog.com"
+  @default_api_url "https://us.i.posthog.com"
 
   def main(args) do
     print_info(:config)

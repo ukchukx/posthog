@@ -12,7 +12,7 @@ A simple console application to demonstrate PostHog feature flag functionality.
 2. Set your PostHog API key and URL:
    ```bash
    export POSTHOG_API_KEY="your_project_api_key"
-   export POSTHOG_API_URL="https://app.posthog.com"  # Or your self-hosted instance
+   export POSTHOG_API_URL="https://us.i.posthog.com"  # Or your self-hosted instance
    ```
 
 ## Usage
