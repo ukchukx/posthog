@@ -61,7 +61,7 @@
       "variant": null,
       "reason": {
           "code": "no_condition_match",
-          "condition_index": 0,
+          "condition_index": null,
           "description": "No matching condition set"
       },
       "metadata": {
