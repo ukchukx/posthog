@@ -81,8 +81,6 @@ defmodule Posthog.Event do
   @type properties :: map()
   @type timestamp :: String.t() | DateTime.t() | NaiveDateTime.t()
 
-  import Posthog.Guard, only: [is_keyword_list: 1]
-
   defstruct [:event, :distinct_id, :properties, :uuid, :timestamp]
 
   @lib_name "posthog-elixir"
@@ -157,7 +155,7 @@ defmodule Posthog.Event do
     |> Enum.into(%{})
   end
 
-  defp deep_stringify_keys(term) when is_keyword_list(term) do
+  defp deep_stringify_keys([{key, _value} | _] = term) when is_atom(key) do
     term
     |> Enum.map(fn {k, v} -> {to_string(k), deep_stringify_keys(v)} end)
     |> Enum.into(%{})
