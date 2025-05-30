@@ -149,10 +149,17 @@ defmodule Posthog.Event do
   end
 
   @doc false
-  defp deep_stringify_keys(term) when is_map(term) do
+  defp deep_stringify_keys(term) when is_non_struct_map(term) do
     term
     |> Enum.map(fn {k, v} -> {to_string(k), deep_stringify_keys(v)} end)
     |> Enum.into(%{})
+  end
+
+  defp deep_stringify_keys(term) when is_struct(term) do
+    case String.Chars.impl_for(term) do
+      nil -> Map.from_struct(term)
+      _ -> to_string(term)
+    end
   end
 
   defp deep_stringify_keys([{key, _value} | _] = term) when is_atom(key) do
