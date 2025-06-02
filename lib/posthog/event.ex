@@ -150,7 +150,7 @@ defmodule Posthog.Event do
 
   @doc false
   defp deep_stringify_keys(term) when is_struct(term) do
-    term |> Map.from_struct |> deep_stringify_keys
+    term |> Map.from_struct() |> deep_stringify_keys
   end
 
   defp deep_stringify_keys(term) when is_map(term) do

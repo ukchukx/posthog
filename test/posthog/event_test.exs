@@ -95,7 +95,11 @@ defmodule Posthog.EventTest do
     end
 
     test "handles structs in properties" do
-      event = Event.new("test", "user_123", %{tags: ["elixir", "posthog"], event: %__MODULE__{name: "test"}})
+      event =
+        Event.new("test", "user_123", %{
+          tags: ["elixir", "posthog"],
+          event: %__MODULE__{name: "test"}
+        })
 
       payload = Event.to_api_payload(event)
 
