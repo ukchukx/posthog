@@ -4,6 +4,8 @@ defmodule Posthog.EventTest do
 
   alias Posthog.Event
 
+  defstruct [:name]
+
   describe "new/4" do
     test "creates an event with default values" do
       event = Event.new("test_event", "user_123")
@@ -90,6 +92,15 @@ defmodule Posthog.EventTest do
       payload = Event.to_api_payload(event)
 
       assert payload.properties["tags"] == ["elixir", "posthog"]
+    end
+
+    test "handles structs in properties" do
+      event = Event.new("test", "user_123", %{tags: ["elixir", "posthog"], event: %__MODULE__{name: "test"}})
+
+      payload = Event.to_api_payload(event)
+
+      assert payload.properties["tags"] == ["elixir", "posthog"]
+      assert payload.properties["event"]["name"] == "test"
     end
   end
 
