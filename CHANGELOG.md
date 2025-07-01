@@ -1,3 +1,7 @@
+## 1.1.0 - 2025-07-01
+
+- Expose `capture/2` `b077aba849126c63f1c7a82b6ad9d21945871a4a`
+
 ## 1.0.3 - 2025-06-02
 
 - Fix implementation for structs `2cdc6f578a192fd751ce105018a7f78b7ed8f852`
