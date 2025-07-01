@@ -280,22 +280,13 @@ For more detailed output:
 mix credo --strict --verbose
 ```
 
-### Mix Audit
-
-Mix Audit helps identify security vulnerabilities in dependencies. Run it with:
-
-```bash
-mix deps.audit
-```
-
 ## Contributing
 
 When contributing to this project, please ensure your code passes all the development tool checks:
 
 1. Run Credo to ensure code style consistency
-2. Run Mix Audit to check for security vulnerabilities
-3. Run Mix Unused to identify any unused code
-4. Run the test suite with `mix test`
+2. Run Mix Unused to identify any unused code
+3. Run the test suite with `mix test`
 
 ## License
 

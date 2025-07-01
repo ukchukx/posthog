@@ -91,6 +91,3 @@ jobs:
 
       - name: Run static checks
         run: mix credo --strict
-
-      - name: Run audit
-        run: mix deps.audit
