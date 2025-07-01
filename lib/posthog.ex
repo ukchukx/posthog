@@ -144,7 +144,7 @@ defmodule Posthog do
 
   @spec capture(Client.event(), Client.distinct_id(), Client.properties(), Client.opts()) ::
           Client.result()
-  defdelegate capture(event, distinct_id, properties, opts \\ []), to: Client
+  defdelegate capture(event, distinct_id, properties \\ %{}, opts \\ []), to: Client
 
   @doc """
   Sends multiple events to PostHog in a single request.
