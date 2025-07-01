@@ -63,8 +63,7 @@ defmodule Posthog.MixProject do
       {:mimic, "~> 1.11", only: :test},
       {:cachex, "~> 4.0.4"},
       # Development tools
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:mix_audit, "~> 2.0", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 end
