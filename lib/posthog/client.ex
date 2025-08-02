@@ -117,8 +117,8 @@ defmodule Posthog.Client do
 
   * `:headers` - Additional HTTP headers to include in the request
   * `:groups` - Group properties for feature flag evaluation
-  * `:group_properties` - Additional properties for groups
-  * `:person_properties` - Properties for the person
+  * `:group_properties` - Additional properties for groups for feature flag evaluation
+  * `:person_properties` - Properties for the person for feature flag evaluation
   * `:timestamp` - Custom timestamp for events
   * `:uuid` - Custom UUID for the event
   """

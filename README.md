@@ -161,6 +161,34 @@ events = [
 Posthog.batch(events)
 ```
 
+### Setting person properties
+
+Setting person properties in our Elixir SDK is slightly more complicated than it is in other SDKs because we don't support auxiliary/conveniency methods yet. You can, however, achieve the same behavior by triggering a `$set` event manually
+
+```elixir
+Posthog.capture(
+  "$set",
+  "user_123",
+  %{ "$set": %{ firstName: "Max", lastName: "The Hedgehog" } }
+)
+```
+
+### Setting group properties
+
+Setting group properties in our Elixir SDK is slightly more complicated than it is in other SDKs because we don't support auxiliary/conveniency methods yet. You can, however, achieve the same behavior by triggering a `$groupidentify` event manually
+
+```elixir
+Posthog.capture(
+  "$groupidentify",
+  "user_123",
+  %{
+    "$group_type": "organization",
+    "$group_key": "orgid_12345",
+    "$group_set": %{ "group_property_key": "group_property_value" }
+  }
+)
+```
+
 ### Feature Flags
 
 Get all feature flags for a user:
