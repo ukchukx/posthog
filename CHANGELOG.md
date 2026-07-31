@@ -1,5 +1,11 @@
 # posthog
 
+## 2.14.0 — 2026-07-31
+
+### Minor changes
+
+- [4fed56b](https://github.com/posthog/posthog-elixir/commit/4fed56bd148373502bb23fdd5bbb480afaa2460c) Send minimal `$feature_flag_called` events when the `/flags` response carries the server-controlled `minimalFlagCalledEvents` gate and the evaluated flag reports `has_experiment: false`. Minimal events keep only an allowlisted set of properties (flag identity, evaluation metadata, `$groups`, `$process_person_profile`, `$session_id`, `$lib`, `$lib_version`, `$is_server`); everything else, including context and global properties, is stripped. Experiment-linked flags and responses without the gate keep the full event shape. — Thanks @haacked!
+
 ## 2.13.0 — 2026-07-23
 
 ### Minor changes
