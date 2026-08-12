@@ -1,5 +1,11 @@
 # posthog
 
+## 2.14.1 — 2026-08-12
+
+### Patch changes
+
+- [35087c1](https://github.com/posthog/posthog-elixir/commit/35087c1e24d603d4438aa63d75db8a51cff022ec) Keep gzip-compressed request bodies valid across retries — Thanks @marandaneto!
+
 ## 2.14.0 — 2026-07-31
 
 ### Minor changes
